@@ -4,18 +4,21 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 dotenv.config();
-console.log('current state', process.env.NODE_ENV); 
+
 const app = express();
 
-import authrouter from "./routers/auth.route.js";
-
-const port = process.env.PORT || 3000;
-
-// Needed for ES module __dirname
+// Needed for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// API routes
+// Import API routes
+import authrouter from "./routers/auth.route.js";
+
+// Port
+const port = process.env.PORT || 3000;
+
+// Middleware
+app.use(express.json());
 app.use("/api/auth", authrouter);
 
 // Example route
@@ -23,23 +26,28 @@ app.get("/fuck", (req, res) => {
   res.send("oh this is fucked up");
 });
 
-// Serve frontend build in production
+// -------------------------------
+// Serve React frontend in production
+// -------------------------------
 if (process.env.NODE_ENV === "production") {
+  // Path to frontend build inside Docker image
   const frontendPath = path.join(__dirname, "../../frontend/dist");
 
+  // Serve static files
   app.use(express.static(frontendPath));
 
+  // Catch-all to serve index.html for React Router
   app.get(/.*/, (req, res) => {
-  res.sendFile(path.join(frontendPath, "index.html"));
-});
-
+    res.sendFile(path.join(frontendPath, "index.html"));
+  });
 } else {
-  // fallback for dev mode
+  // Dev fallback
   app.get("/", (req, res) => {
     res.send("Backend running in development mode");
   });
 }
 
+// Start server
 app.listen(port, () => {
   console.log(`✅ Server running on http://localhost:${port}`);
 });
