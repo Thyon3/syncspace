@@ -2,7 +2,7 @@
 import User from '../model/user.model.js';
 import bcrypt from 'bcrypt';
 import { generateToken } from '../util/util.js'
-
+import { sendWelcomeEmail } from '../email/email_handler.js';
 export const signUp = async function (req, res) {
     try {
         const { name, email, password } = req.body;
@@ -55,6 +55,14 @@ export const signUp = async function (req, res) {
         await user.save();
 
         user.hashPassword = undefined;
+
+        // send the user a welcome email 
+        try {
+            // TODO  use the users email and also application url as a client url 
+            sendWelcomeEmail('asnakemengesha80@gmail.com', 'client', 'client');
+        } catch (error) {
+            console.log('failed to send email', error);
+        }
 
         return res.json(user);
 
