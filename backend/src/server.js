@@ -1,10 +1,9 @@
 import express from "express";
-import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import db from './config/db.js'
 import cors from 'cors';
-dotenv.config();
+import { ENV } from './util/env.js';
 
 const app = express();
 
@@ -22,7 +21,7 @@ const __dirname = path.dirname(__filename);
 import authrouter from "./routers/auth.route.js";
 
 // Port
-const port = process.env.PORT || 3000;
+const port = ENV.PORT || 3000;
 
 // Middleware
 app.use(express.json());
@@ -36,7 +35,7 @@ app.get("/fuck", (req, res) => {
 // -------------------------------
 // Serve React frontend in production
 // -------------------------------
-if (process.env.NODE_ENV === "production") {
+if (ENV.NODE_ENV === "production") {
   // Path to frontend build inside Docker image
   const frontendPath = path.join(__dirname, "../../frontend/dist");
 

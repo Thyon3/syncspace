@@ -3,6 +3,7 @@ import User from '../model/user.model.js';
 import bcrypt from 'bcrypt';
 import { generateToken } from '../util/util.js'
 import { sendWelcomeEmail } from '../email/email_handler.js';
+import { ENV } from '../util/env.js';
 export const signUp = async function (req, res) {
     try {
         const { name, email, password } = req.body;
