@@ -77,38 +77,40 @@ export const signUp = async function (req, res) {
 
 }
 
-export const login = async function (req, res) {
+export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
+
         if (!email || !password) {
-            return res.status(400).json({
-                message: 'please provide all the fields'
-            });
+            return res.status(400).json({ message: 'Please provide all fields' });
         }
+
         const user = await User.findOne({ email });
         if (!user) {
-            return res.status(400).json({
-                message: "Invalid Credentials"
-            });
+            return res.status(400).json({ message: 'Invalid credentials' });
         }
-        const validPassword = bcrypt.compareSync(password, user.hashPassword);
+
+        const validPassword = await bcrypt.compare(password, user.hashPassword);
         if (!validPassword) {
-            return res.status(400).json({
-                message: 'Invalid Credentials'
-            });
+            return res.status(400).json({ message: 'Invalid credentials' });
         }
-        // generate token and save it in the cookies 
+
+        // generate JWT cookie
         generateToken(user._id, res);
-        user.hashPassword = undefined;
-        return res.json(user);
+
+        return res.status(200).json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+        });
     } catch (error) {
-        return res.status(500).json({
+        console.error(error);
+        res.status(500).json({
             type: error.name,
-            message: error.message
+            message: error.message,
         });
     }
-}
-
+};
 // logout 
 
 export const logout = async function (_, res) {
@@ -116,4 +118,20 @@ export const logout = async function (_, res) {
     res.status(200).json({
         message: 'logged out successfully'
     });
+}
+
+// check if the user is logged or not 
+export const check = async function (req, res) {
+    try {
+        const token = req.cookies.jwt; // read JWT from cookie
+        if (!token) {
+            return res.status(401).json({ message: 'No token found' });
+        }
+
+        const decoded = jwt.verify(token, ENV.JWT_SECRET);
+        res.json({ user: decoded });
+    } catch (error) {
+        console.error('Error in auth/check', error);
+        res.status(401).json({ message: 'Invalid or expired token' });
+    }
 }
