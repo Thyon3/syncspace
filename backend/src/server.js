@@ -7,6 +7,7 @@ import { ENV } from './util/env.js';
 import cookieParser from 'cookie-parser';
 
 const app = express();
+app.set("trust proxy", true);
 
 //middlwares
 app.use(cors());
