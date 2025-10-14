@@ -2,7 +2,7 @@ import React from 'react'
 import { Route, Routes, Navigate } from 'react-router'
 import ChatPage from './pages/chatPage';
 import SignUpPage from './pages/signUpPage';
-import LoginPage from './pages/loginPage';
+import LoginPage from './pages/loginPage'
 import { userAuthStore } from './store/userAuthStore';
 import { useEffect } from 'react';
 import PageLoader from './components/page_loader';
