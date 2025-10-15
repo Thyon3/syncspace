@@ -10,9 +10,10 @@ const app = express();
 app.set("trust proxy", true);
 
 //
+
 app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true
+  origin: 'http://localhost:5173', // frontend URL
+  credentials: true // allow cookies
 }));
 app.use(express.json());
 app.use(cookieParser());
@@ -26,6 +27,7 @@ const __dirname = path.dirname(__filename);
 // Import API routes
 import authrouter from "./routers/auth.route.js";
 import messageRouter from './routers/message.route.js';
+import userRouter from './routers/user.route.js';
 
 // Port
 const port = ENV.PORT || 3000;
@@ -34,6 +36,7 @@ const port = ENV.PORT || 3000;
 app.use(express.json());
 app.use("/api/auth", authrouter);
 app.use("/api/messages", messageRouter);
+app.use("/api/user", userRouter);
 
 // Example route
 app.get("/fuck", (req, res) => {
