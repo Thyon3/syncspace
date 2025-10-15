@@ -15,6 +15,7 @@ export const userAuthStore = create((set, get) => ({
         try {
             const res = await axiosInstance.post("/auth/signUp", data);
             set({ authUser: res.data });
+            console.log(authUser);
             toast.success('Account created Succesfully');
         } catch (error) {
             toast.error(error.response.data.message);
@@ -40,6 +41,7 @@ export const userAuthStore = create((set, get) => ({
         try {
             const res = await axiosInstance.post("/auth/login", data);
             set({ authUser: res.data });
+            console.log(authUser);
             toast.success('Logged in Succesfully');
         } catch (error) {
             toast.error(error.response.data.message);
@@ -52,10 +54,9 @@ export const userAuthStore = create((set, get) => ({
         try {
             const res = await axiosInstance.get("auth/check");
             set({
-                authUser: res.data
+                authUser: res.data.user
             });
-            // show a toast for the user 
-            toast.success('account created succssfully');
+
 
         } catch (error) {
             console.log('Error in authCkeck ', error);
