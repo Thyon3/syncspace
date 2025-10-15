@@ -7,8 +7,8 @@ export const protectRoute = async (req, res, next) => {
         let token;
 
 
-        if (req.cookies?.jwt) {
-            token = req.cookies.jwt;
+        if (req.cookies?.userJwt) {
+            token = req.cookies.userJwt;
         } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
             token = req.headers.authorization.split(' ')[1];
         }
