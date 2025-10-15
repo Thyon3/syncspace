@@ -1,53 +1,31 @@
 import cloudinary from "../config/cloudinary.js";
 import User from "../model/user.model.js";
 
+
 export const updateProfile = async (req, res) => {
     try {
+        if (!req.user) return res.status(401).json({ message: "unauthorized" });
+        if (!req.file) return res.status(400).json({ message: "Profile picture is required" });
 
-        if (!req.user) {
-            return res.status(401).json({ message: "Unauthorized: user not found in request." });
-        }
+        // Upload buffer directly to Cloudinary
+        const uploadResponse = await cloudinary.uploader.upload_stream(
+            { folder: "user_profiles", transformation: [{ width: 400, height: 400, crop: "fill", gravity: "face" }] },
+            async (error, result) => {
+                if (error) return res.status(500).json({ message: error.message });
 
-        const { profilePic } = req.body;
-        if (!profilePic) {
-            return res.status(400).json({ message: "Profile picture is required." });
-        }
+                const updatedUser = await User.findByIdAndUpdate(
+                    req.user._id,
+                    { profilePic: result.secure_url, profilePicPublicId: result.public_id },
+                    { new: true }
+                ).select("-password");
+                console.log('proeile updated successfully', updatedUser);
+                res.status(200).json({ success: true, user: updatedUser });
+            }
+        );
 
-        const userId = req.user._id;
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(404).json({ message: "User not found." });
-        }
-
-        // Delete old picture if exists
-        if (user.profilePicPublicId) {
-            await cloudinary.uploader.destroy(user.profilePicPublicId);
-        }
-
-        // Upload new picture
-        const uploadResponse = await cloudinary.uploader.upload(profilePic, {
-            folder: "user_profiles",
-            transformation: [{ width: 400, height: 400, crop: "fill", gravity: "face" }],
-        });
-
-        // Update user document
-        const updatedUser = await User.findByIdAndUpdate(
-            userId,
-            {
-                profilePic: uploadResponse.secure_url,
-                profilePicPublicId: uploadResponse.public_id,
-            },
-            { new: true }
-        ).select("-password"); // exclude password
-
-        return res.status(200).json({
-            message: "Profile updated successfully.",
-            user: updatedUser,
-        });
+        // pipe buffer to upload_stream
+        uploadResponse.end(req.file.buffer);
     } catch (error) {
-        return res.status(500).json({
-            message: error.message,
-            type: error.name,
-        });
+        res.status(500).json({ message: error.message });
     }
-};
+}

@@ -1,8 +1,10 @@
 import { create } from 'zustand';
 import { axiosInstance } from '../lib/axios';
 import toast from 'react-hot-toast';
+import { userAuthStore } from './userAuthStore';
 
 export const useChatStore = create((set, get) => ({
+
     allContacts: [],
     chats: [],
     activeTab: "chats",
@@ -74,6 +76,22 @@ export const useChatStore = create((set, get) => ({
                 isChatLoading: false
             })
 
+        }
+    }, updateProfile: async (data) => {
+        try {
+            const authUser = userAuthStore.getState().authUser;
+
+            console.log("Current authUser:", authUser);
+
+            const res = await axiosInstance.put("/user/updateProfile", data);
+
+
+            userAuthStore.setState({ authUser: res.data });
+
+            toast.success('Profile updated successfully');
+        } catch (error) {
+            console.error(error);
+            toast.error(error.response?.data?.message ?? 'Could not update profile, something went wrong');
         }
     }
 

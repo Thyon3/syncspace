@@ -6,11 +6,12 @@ export const generateToken = async function (userId, res) {
         expiresIn: "7d"
     });
 
-    console.log('token generated ', token);
-    res.cookie('jwt', token, {
-        maxAge: 7 * 24 * 60 * 60 * 1000,
+    console.log('token generated', token);
+
+    res.cookie('userJwt', token, {
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         httpOnly: true,
-        sameSite: "strict",
-        secure: ENV.NODE_ENV === 'production' ? false : true
+        sameSite: ENV.NODE_ENV === 'production' ? 'strict' : 'lax',
+        secure: ENV.NODE_ENV === 'production' // only true in production
     });
 }

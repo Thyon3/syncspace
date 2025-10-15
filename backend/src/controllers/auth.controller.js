@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt';
 import { generateToken } from '../util/util.js'
 import { sendWelcomeEmail } from '../email/email_handler.js';
 import { ENV } from '../util/env.js';
+import jwt from 'jsonwebtoken';
 export const signUp = async function (req, res) {
     try {
         const { name, email, password } = req.body;
@@ -123,7 +124,7 @@ export const logout = async function (_, res) {
 // check if the user is logged or not 
 export const check = async function (req, res) {
     try {
-        const token = req.cookies.jwt; // read JWT from cookie
+        const token = req.cookies.userJwt; // read JWT from cookie
         if (!token) {
             return res.status(401).json({ message: 'No token found' });
         }

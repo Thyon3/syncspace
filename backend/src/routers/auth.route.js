@@ -5,13 +5,13 @@ import { arcjetProtectRoute } from '../middleware/arcjet.middleware.js';
 import { updateProfile } from '../controllers/user.controller.js';
 const router = express.Router();
 
-router.get('/signUp', signUp);
+router.post('/signUp', signUp);
 router.post('/login', login);
 router.post('/logout', logout);
 router.get('/check', check);
 
 // update profile for users 
 
-router.post('/updateProfile', updateProfile)
+router.put('/updateProfile', updateProfile)
 
 export default router; 
