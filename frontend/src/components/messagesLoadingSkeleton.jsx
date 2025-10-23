@@ -1,15 +1,15 @@
+import React from "react";
+
 function MessagesLoadingSkeleton() {
     return (
-        <div className="max-w-3xl mx-auto space-y-6">
-            {[...Array(6)].map((_, index) => (
-                <div
-                    key={index}
-                    className={`chat ${index % 2 === 0 ? "chat-start" : "chat-end"} animate-pulse`}
-                >
-                    <div className={`chat-bubble bg-slate-800 text-white w-32`}></div>
-                </div>
-            ))}
+        <div className="flex justify-center items-center h-full">
+            <div className="flex space-x-2  justify-center items-center">
+                <span className="w-3 h-3 bg-slate-400 rounded-full animate-bounce delay-75"></span>
+                <span className="w-3 h-3 bg-slate-400 rounded-full animate-bounce delay-150"></span>
+                <span className="w-3 h-3 bg-slate-400 rounded-full animate-bounce delay-300"></span>
+            </div>
         </div>
     );
 }
+
 export default MessagesLoadingSkeleton;

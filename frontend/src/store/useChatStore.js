@@ -2,11 +2,11 @@ import { create } from 'zustand';
 import { axiosInstance } from '../lib/axios';
 import toast from 'react-hot-toast';
 import { userAuthStore } from './userAuthStore';
-
 export const useChatStore = create((set, get) => ({
 
     allContacts: [],
     chats: [],
+    messages: [],
     activeTab: "chats",
     isUserLoading: false,
     isChatLoading: false,
@@ -37,8 +37,30 @@ export const useChatStore = create((set, get) => ({
             selectedUser
         })
     },
-    // get all contacts 
 
+
+
+    // get all messages 
+
+    getMessagesById: async (userId) => {
+        set({
+            isMessageLoading: true
+        })
+        try {
+            const res = await axiosInstance.get(`/messages/user/${userId}`);
+            set({
+                messages: res.data
+            })
+        } catch (error) {
+            toast.error(error.response?.data?.message ?? 'something went wrong ');
+        } finally {
+            set({
+                isMessageLoading: false
+            });
+        }
+    }
+    // ge, t all contacts 
+    ,
     getAllContacts: async () => {
         // set the contacts state to loading 
         set({
