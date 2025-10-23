@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useChatStore } from "../store/useChatStore";
 import UsersLoadingSkeleton from "../components/usersLoadinSkeleton";
-import NoChatsFound from "./noChatsFound";
+import NoChatsFound from "../components/noChatsFound";
 
 function ChatsList() {
     const { isChatLoading, chats, getAllChats, setSelectedUser } = useChatStore();
@@ -10,21 +10,16 @@ function ChatsList() {
         getAllChats();
     }, [getAllChats]);
 
-    if (isChatLoading) {
-        return <UsersLoadingSkeleton />;
-    }
-
-    if (!chats || chats.length === 0) {
-        return <NoChatsFound />;
-    }
+    if (isChatLoading) return <UsersLoadingSkeleton />;
+    if (!chats || chats.length === 0) return <NoChatsFound />;
 
     return (
-        <div className="space-y-2 px-2 py-2">
+        <div className="space-y-2 px-2 py-2 bg-slate-900 h-full">
             {chats.map((chat) => (
                 <div
                     key={chat._id}
                     onClick={() => setSelectedUser(chat)}
-                    className="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-700/30 transition-colors cursor-pointer group"
+                    className="flex items-center gap-4 p-3 rounded-xl bg-slate-800 hover:bg-slate-700/50 transition-colors cursor-pointer group shadow-sm"
                 >
                     {/* Avatar */}
                     <div className="relative">
@@ -49,7 +44,7 @@ function ChatsList() {
                         )}
                     </div>
 
-                    {/* Optional timestamp */}
+                    {/* Timestamp */}
                     {chat.lastMessageTime && (
                         <span className="text-slate-500 text-xs">
                             {new Date(chat.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

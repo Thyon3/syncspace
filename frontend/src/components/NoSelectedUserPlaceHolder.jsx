@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageCircle } from 'lucide-react'; // Telegram-style icon
+import { MessageCircle } from 'lucide-react';
 
 function NoSelectedUserPlaceHolder() {
     return (
