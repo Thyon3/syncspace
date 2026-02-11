@@ -36,9 +36,9 @@ export const getChatPartners = async function (req, res) {
             $or: [{ senderId: currentUserId }, { recieverId: currentUserId }],
         });
 
-        if (!messages || messages.length === 0) {
+        if (messages.length === 0) {
             return res.status(404).json({
-                message: "Could not load chats",
+                message: "there are not messages",
             });
         }
 
@@ -114,33 +114,42 @@ export const sendMessage = async function (req, res) {
         });
     }
 };
+export const messages = async function (req, res) {
+    try {
+        const messages = await messageModel.find();
+        return res.json(messages);
+    } catch (error) {
+        return res.status(500).json({
+            message: error.message,
+            type: error.name
+        })
+    }
+}
 
 export const getMessagesById = async function (req, res) {
     try {
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
         const id = req.user._id;
         const chatPartnerId = req.params.userId;
+
         const messages = await messageModel.find({
             $or: [
-                {
-                    recieverId: id,
-                    senderId: chatPartnerId,
-                },
-                {
-                    senderId: id,
-                    recieverId: chatPartnerId,
-                },
+                { recieverId: id, senderId: chatPartnerId },
+                { senderId: id, recieverId: chatPartnerId },
             ],
-        });
-        if (!messages) {
-            return res.status(404).json({
-                message: "failed to load messags",
-            });
-        }
+        }).sort({ createdAt: 1 });
+
+        // return empty array instead of 404
         return res.json(messages);
     } catch (error) {
+        console.error(error);
         return res.status(500).json({
             message: error.message,
             type: error.name,
         });
     }
 };
+

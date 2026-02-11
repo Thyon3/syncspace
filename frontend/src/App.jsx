@@ -27,10 +27,9 @@ const App = () => {
       <div class="absolute right-0 top-0 w-1/5 h-1/3 bg-red-500/10 blur-2xl"></div>
 
       <Routes>
-        <Route path='/' element={authUser ? <ChatPage /> : <Navigate to={'/login'} />} />
-        <Route path='/signUp' element={!authUser ? <SignUpPage /> : <Navigate to={'/login'} />} />
-        <Route path='/login' element={!authUser ? <LoginPage /> : <Navigate to={'/login'} />} />
-      </Routes>
+        <Route path='/' element={authUser ? <ChatPage /> : <Navigate to='/login' />} />
+        <Route path='/signUp' element={!authUser ? <SignUpPage /> : <Navigate to='/' />} />
+        <Route path='/login' element={!authUser ? <LoginPage /> : <Navigate to='/' />} /> </Routes>
       <Toaster />
     </div >
   )

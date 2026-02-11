@@ -97,9 +97,10 @@ export const login = async (req, res) => {
         }
 
         // generate JWT cookie
-        generateToken(user._id, res);
+        const token = generateToken(user._id, res);
 
         return res.status(200).json({
+            token,
             _id: user._id,
             name: user.name,
             email: user.email,

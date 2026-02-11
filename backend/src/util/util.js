@@ -8,10 +8,12 @@ export const generateToken = async function (userId, res) {
 
     console.log('token generated', token);
 
+
     res.cookie('userJwt', token, {
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         httpOnly: true,
         sameSite: ENV.NODE_ENV === 'production' ? 'strict' : 'lax',
         secure: ENV.NODE_ENV === 'production' // only true in production
     });
+    return token;
 }

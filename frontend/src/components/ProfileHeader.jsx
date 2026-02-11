@@ -65,7 +65,7 @@ function ProfileHeader() {
                     {/* Name and status */}
                     <div className="flex flex-col">
                         <h3 className="text-slate-100 text-base font-medium max-w-[160px] truncate">
-                            {authUser?.name || 'User Name'}
+                            {authUser.name || 'User Name'}
                         </h3>
                         <p className="text-slate-400 text-sm">Online</p>
                     </div>

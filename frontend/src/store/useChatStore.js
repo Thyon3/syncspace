@@ -11,6 +11,7 @@ export const useChatStore = create((set, get) => ({
     isUserLoading: false,
     isChatLoading: false,
     isMessageLoading: false,
+    isSendinMessageLoading: false,
     isContactLoading: false,
     isSoundEnabled: localStorage.getItem("isSoundEnabled") === "true",
     selectedUser: null,
@@ -40,25 +41,73 @@ export const useChatStore = create((set, get) => ({
 
 
 
-    // get all messages 
-
     getMessagesById: async (userId) => {
-        set({
-            isMessageLoading: true
-        })
+        set({ isMessageLoading: true });
         try {
             const res = await axiosInstance.get(`/messages/user/${userId}`);
-            set({
-                messages: res.data
-            })
+            set({ messages: res.data });
         } catch (error) {
-            toast.error(error.response?.data?.message ?? 'something went wrong ');
+            toast.error(error.response?.data?.message ?? 'something went wrong');
         } finally {
-            set({
-                isMessageLoading: false
-            });
+            set({ isMessageLoading: false });
         }
     }
+
+
+    // send messages to a user 
+    , sendMessage: async (messageData) => {
+        set({ isSendinMessageLoading: true });
+        try {
+            const { selectedUser, messages } = get();
+            const { authUser } = userAuthStore.getState();
+
+            // If messageData contains image as a file or base64, use FormData
+            const formData = new FormData();
+            if (messageData.text) formData.append("text", messageData.text);
+            if (messageData.image) formData.append("image", messageData.image);
+
+            // optmistic update the ui immediately after the user sends the message 
+
+            const tempId = `${Date.now()}`;
+            const mockMessage = {
+                _id: tempId,
+                senderId: selectedUser._id,
+                recieverId: authUser._id,
+                text: messageData.text,
+                image: messageData.image,
+                createdAt: new Date().toISOString(),
+                isOptimistic: true
+            };
+            set({
+                messages: [...messages, mockMessage]
+            });
+
+            const result = await axiosInstance.post(
+                `/messages/user/${selectedUser._id}/send`,
+                formData,
+                { headers: { "Content-Type": "multipart/form-data" } }
+            );
+
+            // Correct variable name and update state
+            set({
+                messages: [...messages, result.data],
+            });
+
+        } catch (error) {
+            console.log(error);
+            toast.error(
+                error.response?.data?.message ??
+                "Something went wrong while sending your message"
+            );
+            set({
+                messages: messages
+            })
+        } finally {
+            set({ isSendinMessageLoading: false });
+        }
+    }
+
+
     // ge, t all contacts 
     ,
     getAllContacts: async () => {
