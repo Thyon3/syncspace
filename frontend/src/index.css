@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 @layer base {
   * {
@@ -10,7 +10,7 @@
   }
   
   body {
-    @apply bg-slate-900 text-slate-200;
+    @apply bg-slate-900 text-slate-100;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
@@ -19,192 +19,183 @@
     scroll-behavior: smooth;
   }
 
-  /* Custom scrollbar */
+  /* Telegram-style scrollbar */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-slate-900/20;
+    @apply bg-slate-800;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-slate-700/50 rounded-full;
+    @apply bg-slate-600 rounded-full;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-slate-600/50;
+    @apply bg-slate-500;
   }
 
   /* Firefox scrollbar */
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgb(51 65 85 / 0.5) rgb(15 23 42 / 0.2);
+    scrollbar-color: rgb(71 85 105) rgb(30 41 59);
   }
 
   /* Selection styling */
   ::selection {
-    @apply bg-cyan-500/20 text-cyan-100;
+    @apply bg-blue-500/30 text-blue-100;
   }
 
   /* Focus styles */
   :focus-visible {
-    @apply outline-none ring-2 ring-cyan-500/50 ring-offset-2 ring-offset-slate-900;
+    @apply outline-none ring-2 ring-blue-500/50 ring-offset-2 ring-offset-slate-900;
   }
 }
 
 @layer components {
-  /* Modern Input Styles */
-  .input {
-    @apply w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-3 px-4 text-slate-200 placeholder-slate-400 
-           focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 focus:outline-none
-           transition-all duration-200 backdrop-blur-sm;
+  /* Telegram Color Palette */
+  .bg-telegram-dark {
+    background-color: #1c1c1e;
   }
   
-  .auth-input-icon {
-    @apply absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 size-5 transition-colors duration-200;
+  .bg-telegram-sidebar {
+    background-color: #252528;
   }
   
-  .auth-input-label {
-    @apply block font-medium text-slate-300 mb-2 text-sm;
+  .bg-telegram-hover {
+    background-color: #2c2c30;
   }
   
-  .auth-badge {
-    @apply inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-full 
-           bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-300 
-           border border-cyan-500/30 backdrop-blur-sm;
+  .bg-telegram-active {
+    background-color: #38383c;
   }
   
-  .auth-btn {
-    @apply w-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-xl py-3 
-           font-semibold hover:from-cyan-600 hover:to-blue-600 focus:ring-4 focus:ring-cyan-500/20 
-           transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 
-           shadow-lg hover:shadow-xl backdrop-blur-sm;
+  .bg-telegram-blue {
+    background-color: #0088cc;
   }
   
-  .auth-link {
-    @apply px-6 py-3 inline-block bg-gradient-to-r from-cyan-500/10 to-blue-500/10 
-           rounded-xl text-cyan-400 hover:text-cyan-300 hover:from-cyan-500/20 hover:to-blue-500/20 
-           border border-cyan-500/20 transition-all duration-200 font-medium;
+  .bg-telegram-blue-hover {
+    background-color: #0077b3;
   }
   
-  /* Modern Glass Effect */
-  .glass {
-    @apply bg-slate-800/40 backdrop-blur-md border border-slate-700/50;
+  .text-telegram-blue {
+    color: #0088cc;
   }
   
-  .glass-dark {
-    @apply bg-slate-900/60 backdrop-blur-lg border border-slate-700/30;
-  }
-  
-  /* Modern Button Styles */
-  .btn-primary {
-    @apply bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-4 py-2 rounded-lg
-           hover:from-cyan-600 hover:to-blue-600 transition-all duration-200
-           shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95;
-  }
-  
-  .btn-secondary {
-    @apply bg-slate-700/50 text-slate-300 px-4 py-2 rounded-lg
-           hover:bg-slate-700 transition-all duration-200
-           border border-slate-600/50;
-  }
-  
-  /* Modern Card Styles */
-  .card {
-    @apply bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-4
-           shadow-xl hover:shadow-2xl transition-all duration-300;
-  }
-  
-  /* Animation Classes */
-  .fade-in {
-    animation: fadeIn 0.5s ease-in-out;
-  }
-  
-  .slide-up {
-    animation: slideUp 0.3s ease-out;
-  }
-  
-  .pulse-glow {
-    animation: pulseGlow 2s infinite;
+  .border-telegram-sidebar {
+    border-color: #2c2c30;
   }
 
-  .bounce-in {
-    animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  /* Telegram Layout Components */
+  .telegram-sidebar {
+    @apply bg-telegram-sidebar border-r border-telegram-sidebar;
+  }
+  
+  .telegram-chat-list {
+    @apply bg-telegram-dark border-r border-telegram-sidebar;
+  }
+  
+  .telegram-chat-area {
+    @apply bg-telegram-dark;
+  }
+  
+  .telegram-header {
+    @apply bg-telegram-sidebar border-b border-telegram-sidebar px-4 py-3;
+  }
+  
+  .telegram-message-bubble-sent {
+    @apply bg-telegram-blue text-white rounded-2xl rounded-br-sm px-4 py-2 max-w-xs lg:max-w-md;
+  }
+  
+  .telegram-message-bubble-received {
+    @apply bg-telegram-active text-slate-100 rounded-2xl rounded-bl-sm px-4 py-2 max-w-xs lg:max-w-md;
+  }
+  
+  .telegram-chat-item {
+    @apply px-3 py-2 hover:bg-telegram-hover cursor-pointer transition-colors duration-150;
+  }
+  
+  .telegram-chat-item-active {
+    @apply bg-telegram-active;
+  }
+  
+  .telegram-input {
+    @apply bg-telegram-active text-slate-100 placeholder-slate-400 border border-telegram-sidebar rounded-lg px-4 py-2 focus:outline-none focus:border-telegram-blue;
+  }
+  
+  .telegram-button {
+    @apply bg-telegram-blue hover:bg-telegram-blue-hover text-white rounded-lg px-4 py-2 transition-colors duration-150 font-medium;
+  }
+  
+  .telegram-icon-button {
+    @apply p-2 hover:bg-telegram-hover rounded-lg transition-colors duration-150 text-slate-400 hover:text-slate-200;
   }
 
-  .float {
-    animation: float 3s ease-in-out infinite;
+  /* Telegram Typography */
+  .text-title {
+    @apply text-lg font-semibold;
+  }
+  
+  .text-subtitle {
+    @apply text-sm font-medium;
+  }
+  
+  .text-caption {
+    @apply text-xs text-slate-400;
+  }
+  
+  .text-message {
+    @apply text-sm;
+  }
+  
+  .text-unread {
+    @apply text-xs font-semibold bg-telegram-blue text-white rounded-full px-1.5 py-0.5 min-w-[20px] text-center;
+  }
+
+  /* Telegram Animations */
+  .telegram-slide-in {
+    animation: telegramSlideIn 0.2s ease-out;
+  }
+  
+  .telegram-fade-in {
+    animation: telegramFadeIn 0.15s ease-out;
+  }
+
+  .telegram-scale-in {
+    animation: telegramScaleIn 0.1s ease-out;
   }
 }
 
 @layer utilities {
-  .text-gradient {
-    @apply bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent;
-  }
-  
-  .bg-gradient-dark {
-    @apply bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900;
-  }
-
-  .shadow-glow {
-    filter: drop-shadow(0 0 20px rgba(6, 182, 212, 0.3));
-  }
-
-  .backface-hidden {
-    backface-visibility: hidden;
+  .text-gradient-blue {
+    @apply bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent;
   }
 }
 
-@keyframes fadeIn {
+@keyframes telegramSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes telegramFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-@keyframes slideUp {
-  from { 
+@keyframes telegramScaleIn {
+  from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: scale(0.95);
   }
-  to { 
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes pulseGlow {
-  0%, 100% { 
-    box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
-  }
-  50% { 
-    box-shadow: 0 0 40px rgba(6, 182, 212, 0.6);
-  }
-}
-
-@keyframes bounceIn {
-  0% {
-    opacity: 0;
-    transform: scale(0.3);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.05);
-  }
-  70% {
-    transform: scale(0.9);
-  }
-  100% {
+  to {
     opacity: 1;
     transform: scale(1);
-  }
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
   }
 }
