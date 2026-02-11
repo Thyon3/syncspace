@@ -1,48 +1,91 @@
-import React, { useRef, useState } from 'react';
-import { useChatStore } from '../store/useChatStore';
-import { X as XIcon, Image as ImageIcon, Send as SendIcon, Paperclip, Smile } from 'lucide-react';
-import toast from 'react-hot-toast';
+import React, { useState, useRef, useEffect } from "react";
+import { useChatStore } from "../store/useChatStore";
+import toast from "react-hot-toast";
+import {
+    Send,
+    Smile,
+    Paperclip,
+    X,
+    Mic,
+    Image as ImageIcon,
+    Sticker
+} from "lucide-react";
 
 function MessageInput() {
-    const [text, setText] = useState('');
+    const [text, setText] = useState("");
     const [image, setImage] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
     const [isDragging, setIsDragging] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
+
     const fileInputRef = useRef(null);
+    const textareaRef = useRef(null);
 
-    const { sendMessage, isSendinMessageLoading } = useChatStore();
+    const { sendMessage, isSendinMessageLoading, selectedUser } = useChatStore();
 
-    const handleSendMessage = (e) => {
+    useEffect(() => {
+        // Auto-resize textarea
+        const textarea = textareaRef.current;
+        if (textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+        }
+    }, [text]);
+
+    const handleSendMessage = async (e) => {
         e.preventDefault();
-        if (!text.trim() && !image) return;
 
-        sendMessage({ text: text.trim(), image });
-        setText('');
-        setImage(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
+        if (!text.trim() && !image) return;
+        if (!selectedUser) return;
+
+        try {
+            await sendMessage({
+                text: text.trim(),
+                image: image,
+                receiverId: selectedUser._id,
+            });
+
+            setText("");
+            setImage(null);
+            setImagePreview(null);
+
+            // Reset textarea height
+            if (textareaRef.current) {
+                textareaRef.current.style.height = 'auto';
+            }
+        } catch (error) {
+            toast.error("Failed to send message");
+        }
     };
 
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
+    const handleKeyPress = (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleSendMessage(e);
+        }
+    };
+
+    const handleImageUpload = (file) => {
         if (!file) return;
 
+        // Validate file type
         if (!file.type.startsWith('image/')) {
-            toast.error('Please select an image file');
+            toast.error("Please upload an image file");
             return;
         }
 
-        if (file.size > 10 * 1024 * 1024) { // 10MB limit
-            toast.error('Image size should be less than 10MB');
+        // Validate file size (10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            toast.error("Image size should be less than 10MB");
             return;
         }
 
         const reader = new FileReader();
-        reader.onloadend = () => setImage(reader.result);
+        reader.onload = (e) => {
+            setImagePreview(e.target.result);
+            setImage(file);
+        };
         reader.readAsDataURL(file);
-    };
-
-    const removeImage = () => {
-        setImage(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
     const handleDragOver = (e) => {
@@ -59,115 +102,161 @@ function MessageInput() {
         e.preventDefault();
         setIsDragging(false);
 
-        const file = e.dataTransfer.files[0];
-        if (file && file.type.startsWith('image/')) {
-            if (file.size > 10 * 1024 * 1024) {
-                toast.error('Image size should be less than 10MB');
-                return;
-            }
+        const files = Array.from(e.dataTransfer.files);
+        const imageFile = files.find(file => file.type.startsWith('image/'));
 
-            const reader = new FileReader();
-            reader.onloadend = () => setImage(reader.result);
-            reader.readAsDataURL(file);
+        if (imageFile) {
+            handleImageUpload(imageFile);
         }
     };
 
-    const handleKeyPress = (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSendMessage(e);
+    const removeImage = () => {
+        setImage(null);
+        setImagePreview(null);
+    };
+
+    const handleFileSelect = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            handleImageUpload(file);
         }
+    };
+
+    const handleVoiceRecord = () => {
+        // Placeholder for voice recording functionality
+        setIsRecording(!isRecording);
+        toast.info("Voice recording coming soon!");
     };
 
     return (
-        <div className="w-full p-4 glass-dark border-t border-slate-700/30">
+        <div className="border-t border-telegram-sidebar bg-telegram-sidebar">
             {/* Image Preview */}
-            {image && (
-                <div className="relative w-32 h-32 rounded-xl overflow-hidden mx-auto mb-3 glass border border-slate-700/50 slide-up">
-                    <img src={image} alt="preview" className="w-full h-full object-cover" />
-                    <button
-                        onClick={removeImage}
-                        className="absolute top-2 right-2 bg-red-500/80 backdrop-blur-sm rounded-full p-1.5 hover:bg-red-600 transition-all duration-200 shadow-lg"
-                    >
-                        <XIcon className="w-3 h-3 text-white" />
-                    </button>
+            {imagePreview && (
+                <div className="px-4 py-2 border-b border-telegram-sidebar">
+                    <div className="relative inline-block">
+                        <img
+                            src={imagePreview}
+                            alt="Upload preview"
+                            className="max-w-xs h-32 object-cover rounded-lg"
+                        />
+                        <button
+                            onClick={removeImage}
+                            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
             )}
 
-            {/* Message Input */}
+            {/* Input Area */}
             <form
                 onSubmit={handleSendMessage}
-                className={`relative flex items-end gap-3 glass rounded-2xl p-3 border transition-all duration-200 ${isDragging
-                        ? 'border-cyan-500 bg-cyan-500/5'
-                        : 'border-slate-700/30 hover:border-slate-600/50'
-                    }`}
+                className={`p-3 ${isDragging
+                        ? 'bg-telegram-hover'
+                        : ''
+                    } transition-colors duration-200`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
             >
-                {/* Attachment Button */}
-                <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="p-2.5 rounded-xl hover:bg-slate-700/50 transition-all duration-200 group"
-                    title="Attach image"
-                >
-                    <Paperclip className="w-4 h-4 text-slate-400 group-hover:text-cyan-400" />
-                </button>
+                <div className="flex items-end gap-2">
+                    {/* Attach Button */}
+                    <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="telegram-icon-button p-2"
+                        title="Attach file"
+                    >
+                        <Paperclip className="w-5 h-5" />
+                    </button>
 
-                {/* Text Input */}
-                <div className="flex-1 relative">
-                    <textarea
-                        placeholder="Type a message..."
-                        value={text}
-                        onChange={(e) => setText(e.target.value)}
-                        onKeyPress={handleKeyPress}
-                        rows={1}
-                        className="w-full bg-transparent text-slate-100 placeholder-slate-400 outline-none resize-none max-h-32 py-2 text-sm"
-                        style={{ fieldSizing: 'content' }}
-                    />
-                </div>
+                    {/* Text Input */}
+                    <div className="flex-1 relative">
+                        <textarea
+                            ref={textareaRef}
+                            placeholder="Type a message..."
+                            value={text}
+                            onChange={(e) => setText(e.target.value)}
+                            onKeyPress={handleKeyPress}
+                            rows={1}
+                            className="telegram-input w-full resize-none min-h-[40px] max-h-[120px] py-2 px-3 pr-10"
+                            style={{ fieldSizing: 'content' }}
+                        />
 
-                {/* Emoji Button */}
-                <button
-                    type="button"
-                    className="p-2.5 rounded-xl hover:bg-slate-700/50 transition-all duration-200 group"
-                    title="Add emoji"
-                >
-                    <Smile className="w-4 h-4 text-slate-400 group-hover:text-cyan-400" />
-                </button>
+                        {/* Emoji Button */}
+                        <button
+                            type="button"
+                            className="absolute right-2 bottom-2 telegram-icon-button p-1"
+                            title="Add emoji"
+                        >
+                            <Smile className="w-5 h-5" />
+                        </button>
+                    </div>
 
-                {/* Send Button */}
-                <button
-                    type="submit"
-                    disabled={isSendinMessageLoading || (!text.trim() && !image)}
-                    className="p-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:from-cyan-600 hover:to-blue-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
-                >
-                    {isSendinMessageLoading ? (
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    ) : (
-                        <SendIcon className="w-4 h-4" />
-                    )}
-                </button>
-
-                <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleImageChange}
-                    className="hidden"
-                    accept="image/*"
-                />
-            </form>
-
-            {/* Drag overlay */}
-            {isDragging && (
-                <div className="absolute inset-0 bg-cyan-500/10 backdrop-blur-sm rounded-2xl border-2 border-dashed border-cyan-500 flex items-center justify-center pointer-events-none">
-                    <div className="text-center">
-                        <ImageIcon className="w-8 h-8 text-cyan-400 mx-auto mb-2" />
-                        <p className="text-cyan-400 text-sm font-medium">Drop image here</p>
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-1">
+                        {/* Voice/Mic Button */}
+                        {!text.trim() && !image ? (
+                            <button
+                                type="button"
+                                onClick={handleVoiceRecord}
+                                className={`telegram-icon-button p-2 ${isRecording ? 'text-red-500' : ''
+                                    }`}
+                                title={isRecording ? "Stop recording" : "Record voice"}
+                            >
+                                <Mic className="w-5 h-5" />
+                            </button>
+                        ) : (
+              /* Send Button */}
+                        <button
+                            type="submit"
+                            disabled={isSendinMessageLoading || (!text.trim() && !image)}
+                            className="telegram-button p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Send message"
+                        >
+                            {isSendinMessageLoading ? (
+                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                                <Send className="w-5 h-5" />
+                            )}
+                        </button>
+            )}
                     </div>
                 </div>
-            )}
+
+                {/* Drag Overlay */}
+                {isDragging && (
+                    <div className="absolute inset-0 bg-telegram-blue/10 border-2 border-dashed border-telegram-blue rounded-lg flex items-center justify-center pointer-events-none">
+                        <div className="text-center">
+                            <ImageIcon className="w-8 h-8 text-telegram-blue mx-auto mb-2" />
+                            <p className="text-sm text-slate-300">Drop image here</p>
+                        </div>
+                    </div>
+                )}
+            </form>
+
+            {/* Hidden File Input */}
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="hidden"
+            />
+
+            {/* Quick Actions Bar */}
+            <div className="px-4 py-2 border-t border-telegram-sidebar flex items-center gap-4">
+                <button className="telegram-icon-button p-1" title="Stickers">
+                    <Sticker className="w-4 h-4" />
+                </button>
+                <button className="telegram-icon-button p-1" title="GIFs">
+                    <span className="text-xs font-bold text-slate-400">GIF</span>
+                </button>
+                <button className="telegram-icon-button p-1" title="Commands">
+                    <span className="text-xs font-bold text-slate-400">/</span>
+                </button>
+            </div>
         </div>
     );
 }
