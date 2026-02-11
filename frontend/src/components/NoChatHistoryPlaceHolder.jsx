@@ -1,30 +1,75 @@
-import { MessageCircleIcon } from "lucide-react";
+import { MessageCircleIcon, Send, Sparkles } from "lucide-react";
 
 const NoChatHistoryPlaceholder = ({ name }) => {
+    const quickMessages = [
+        { text: "Hey! How are you?", emoji: "👋" },
+        { text: "What's up?", emoji: "😊" },
+        { text: "Long time no see!", emoji: "🎉" },
+        { text: "How's your day going?", emoji: "🌟" },
+        { text: "Want to catch up soon?", emoji: "📅" },
+    ];
+
     return (
-        <div className="flex flex-col items-center justify-center h-full text-center p-6">
-            <div className="w-16 h-16 bg-gradient-to-br from-cyan-500/20 to-cyan-400/10 rounded-full flex items-center justify-center mb-5">
-                <MessageCircleIcon className="size-8 text-cyan-400" />
+        <div className="flex flex-col items-center justify-center h-full text-center p-8 relative overflow-hidden">
+            {/* Animated background elements */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-10 left-10 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl animate-pulse"></div>
+                <div className="absolute bottom-10 right-10 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl animate-pulse delay-1000"></div>
             </div>
-            <h3 className="text-lg font-medium text-slate-200 mb-3">
-                Start your conversation with {name}
-            </h3>
-            <div className="flex flex-col space-y-3 max-w-md mb-5">
-                <p className="text-slate-400 text-sm">
-                    This is the beginning of your conversation. Send a message to start chatting!
+
+            {/* Main content */}
+            <div className="relative z-10 max-w-lg w-full">
+                {/* Icon with glow */}
+                <div className="relative mb-6">
+                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-3xl blur-2xl opacity-30 animate-pulse"></div>
+                    <div className="relative glass-dark rounded-3xl p-6 border border-slate-700/30 inline-block">
+                        <MessageCircleIcon className="w-12 h-12 text-gradient" />
+                    </div>
+                </div>
+
+                {/* Welcome message */}
+                <h3 className="text-2xl font-bold text-gradient mb-3">
+                    Start chatting with {name}
+                </h3>
+                <p className="text-slate-400 text-sm leading-relaxed mb-8">
+                    This is the beginning of your conversation.
+                    Break the ice with a message below or type your own!
                 </p>
-                <div className="h-px w-32 bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent mx-auto"></div>
-            </div>
-            <div className="flex flex-wrap gap-2 justify-center">
-                <button className="px-4 py-2 text-xs font-medium text-cyan-400 bg-cyan-500/10 rounded-full hover:bg-cyan-500/20 transition-colors">
-                    👋 Say Hello
-                </button>
-                <button className="px-4 py-2 text-xs font-medium text-cyan-400 bg-cyan-500/10 rounded-full hover:bg-cyan-500/20 transition-colors">
-                    🤝 How are you?
-                </button>
-                <button className="px-4 py-2 text-xs font-medium text-cyan-400 bg-cyan-500/10 rounded-full hover:bg-cyan-500/20 transition-colors">
-                    📅 Meet up soon?
-                </button>
+
+                {/* Quick message suggestions */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-center gap-2 mb-4">
+                        <Sparkles className="w-4 h-4 text-cyan-400" />
+                        <span className="text-sm font-medium text-slate-300">Quick starters</span>
+                        <Sparkles className="w-4 h-4 text-cyan-400" />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {quickMessages.map((msg, index) => (
+                            <button
+                                key={index}
+                                className="glass rounded-xl p-3 border border-slate-700/30 hover:border-cyan-500/50 transition-all duration-200 group text-left"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <span className="text-lg">{msg.emoji}</span>
+                                    <span className="text-sm text-slate-300 group-hover:text-cyan-400 transition-colors">
+                                        {msg.text}
+                                    </span>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Call to action */}
+                <div className="mt-8 glass rounded-xl p-4 border border-slate-700/30">
+                    <div className="flex items-center gap-3 text-cyan-400">
+                        <Send className="w-5 h-5" />
+                        <p className="text-sm font-medium">
+                            Type your message below to get started
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
     );
