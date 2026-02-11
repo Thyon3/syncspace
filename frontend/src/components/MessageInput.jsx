@@ -153,8 +153,8 @@ function MessageInput() {
             <form
                 onSubmit={handleSendMessage}
                 className={`p-3 ${isDragging
-                        ? 'bg-telegram-hover'
-                        : ''
+                    ? 'bg-telegram-hover'
+                    : ''
                     } transition-colors duration-200`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -208,20 +208,20 @@ function MessageInput() {
                                 <Mic className="w-5 h-5" />
                             </button>
                         ) : (
-              /* Send Button */}
-                        <button
-                            type="submit"
-                            disabled={isSendinMessageLoading || (!text.trim() && !image)}
-                            className="telegram-button p-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Send message"
-                        >
-                            {isSendinMessageLoading ? (
-                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            ) : (
-                                <Send className="w-5 h-5" />
-                            )}
-                        </button>
-            )}
+                            // Send Button
+                            <button
+                                type="submit"
+                                disabled={isSendinMessageLoading || (!text.trim() && !image)}
+                                className="telegram-button p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Send message"
+                            >
+                                {isSendinMessageLoading ? (
+                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                ) : (
+                                    <Send className="w-5 h-5" />
+                                )}
+                            </button>
+                        )}
                     </div>
                 </div>
 
