@@ -10,95 +10,126 @@ import { useChatStore } from "../store/useChatStore";
 function ChatPage() {
     const { activeTab, selectedUser } = useChatStore();
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-    const [showList, setShowList] = useState(true); // mobile: show list initially
-    const [sidebarWidth, setSidebarWidth] = useState(300); // desktop: initial sidebar width
+    const [showList, setShowList] = useState(true);
+    const [sidebarWidth, setSidebarWidth] = useState(320);
 
-    // Handle window resize
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 768);
         window.addEventListener("resize", handleResize);
         return () => window.removeEventListener("resize", handleResize);
     }, []);
 
-    // Mobile handlers
     const handleSelectChat = () => setShowList(false);
     const handleBackToList = () => setShowList(true);
 
     // Mobile layout
     if (isMobile) {
         return (
-            <div className="w-full h-screen flex flex-col bg-slate-900">
+            <div className="w-full h-screen flex flex-col bg-gradient-dark">
                 {showList ? (
                     <div className="flex-1 flex flex-col">
-                        <ProfileHeader />
-                        <ActiveTabSwitch />
-                        {activeTab === "chats" ? (
-                            <ChatsList onSelectChat={handleSelectChat} />
-                        ) : (
-                            <ContactsList onSelectChat={handleSelectChat} />
-                        )}
+                        <div className="glass-dark border-b border-slate-700/30">
+                            <ProfileHeader />
+                        </div>
+                        <div className="glass-dark border-b border-slate-700/30">
+                            <ActiveTabSwitch />
+                        </div>
+                        <div className="flex-1 overflow-hidden">
+                            {activeTab === "chats" ? (
+                                <ChatsList onSelectChat={handleSelectChat} />
+                            ) : (
+                                <ContactsList onSelectChat={handleSelectChat} />
+                            )}
+                        </div>
                     </div>
                 ) : (
                     <div className="flex-1 flex flex-col">
-                        {/* Back button */}
-                        <div className="flex items-center p-4 bg-slate-800 border-b border-slate-700">
-                            <button
-                                onClick={handleBackToList}
-                                className="text-cyan-400 font-semibold mr-4"
-                            >
-                                Back
-                            </button>
-                            <h2 className="text-slate-100 font-semibold">
-                                {selectedUser?.name || "Chat"}
-                            </h2>
+                        <div className="glass-dark border-b border-slate-700/30 p-4">
+                            <div className="flex items-center gap-4">
+                                <button
+                                    onClick={handleBackToList}
+                                    className="btn-primary p-2 rounded-lg flex items-center gap-2"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                    </svg>
+                                    Back
+                                </button>
+                                <h2 className="text-lg font-semibold text-slate-200 truncate">
+                                    {selectedUser?.name || "Chat"}
+                                </h2>
+                            </div>
                         </div>
-                        {/* Chat container */}
-                        <ChatContainer />
+                        <div className="flex-1 bg-slate-900/40">
+                            <ChatContainer />
+                        </div>
                     </div>
                 )}
             </div>
         );
     }
 
-    // Desktop layout (full screen)
+    // Desktop layout
     return (
-        <div className="relative w-full h-screen flex rounded-lg overflow-hidden">
+        <div className="relative w-full h-screen flex bg-gradient-dark overflow-hidden">
+            {/* Animated background elements */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-20 left-20 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl animate-pulse"></div>
+                <div className="absolute bottom-20 right-20 w-40 h-40 bg-blue-500/10 rounded-full blur-2xl animate-pulse delay-1000"></div>
+            </div>
+
             {/* Sidebar */}
             <div
-                className="flex flex-col bg-slate-900 backdrop-blur-sm"
+                className="flex flex-col glass-dark border-r border-slate-700/30 shadow-2xl z-10"
                 style={{ width: sidebarWidth }}
             >
-                <ProfileHeader />
-                <ActiveTabSwitch />
-                <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-slate-900">
+                <div className="border-b border-slate-700/30">
+                    <ProfileHeader />
+                </div>
+                <div className="border-b border-slate-700/30">
+                    <ActiveTabSwitch />
+                </div>
+                <div className="flex-1 overflow-hidden">
                     {activeTab === "chats" ? <ChatsList /> : <ContactsList />}
                 </div>
             </div>
 
-            {/* Drag bar */}
+            {/* Resize handle */}
             <div
-                className="cursor-col-resize w-1 bg-slate-700/50 hover:bg-cyan-500 transition-colors"
+                className="cursor-col-resize w-1 bg-slate-700/30 hover:bg-cyan-500/50 transition-all duration-200 z-20 group"
                 onMouseDown={(e) => {
                     e.preventDefault();
+                    const startX = e.clientX;
+                    const startWidth = sidebarWidth;
+
                     const handleMouseMove = (event) => {
-                        const newWidth = event.clientX;
-                        if (newWidth > 200 && newWidth < 500) setSidebarWidth(newWidth);
+                        const deltaX = event.clientX - startX;
+                        const newWidth = Math.max(280, Math.min(500, startWidth + deltaX));
+                        setSidebarWidth(newWidth);
                     };
+
                     const handleMouseUp = () => {
                         window.removeEventListener("mousemove", handleMouseMove);
                         window.removeEventListener("mouseup", handleMouseUp);
                     };
+
                     window.addEventListener("mousemove", handleMouseMove);
                     window.addEventListener("mouseup", handleMouseUp);
                 }}
-            />
+            >
+                <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-0.5 bg-cyan-500/30 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            </div>
 
-            {/* Chat container */}
-            <div className="flex-1 flex flex-col bg-slate-800/90 backdrop-blur-md">
+            {/* Main chat area */}
+            <div className="flex-1 flex flex-col bg-slate-900/20 backdrop-blur-sm">
                 {selectedUser ? (
-                    <ChatContainer />
+                    <div className="flex-1 flex flex-col fade-in">
+                        <ChatContainer />
+                    </div>
                 ) : (
-                    <NoSelectedUserPlaceHolder />
+                    <div className="flex-1 flex items-center justify-center">
+                        <NoSelectedUserPlaceHolder />
+                    </div>
                 )}
             </div>
         </div>
