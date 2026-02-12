@@ -6,6 +6,7 @@ import ChatHeader from "./ChatHeader";
 import NoSelectedUserPlaceHolder from "./NoSelectedUserPlaceHolder";
 import NoChatHistoryPlaceHolder from "./NoChatHistoryPlaceHolder";
 import MessagesLoadingSkeleton from "./messagesLoadingSkeleton";
+import TypingIndicator from "./TypingIndicator";
 import { Check, CheckCheck } from "lucide-react";
 
 function ChatContainer() {
@@ -16,6 +17,9 @@ function ChatContainer() {
         getMessages,
         subscribeToMessages,
         unsubscribeFromMessages,
+        listenForTyping,
+        stopListeningForTyping,
+        markMessagesAsRead,
     } = useChatStore();
 
     const { authUser } = userAuthStore();
@@ -25,16 +29,32 @@ function ChatContainer() {
         if (selectedUser?._id) {
             getMessages(selectedUser._id);
             subscribeToMessages();
+            listenForTyping();
         }
 
-        return () => unsubscribeFromMessages();
-    }, [selectedUser?._id, getMessages, subscribeToMessages, unsubscribeFromMessages]);
+        return () => {
+            unsubscribeFromMessages();
+            stopListeningForTyping();
+        };
+    }, [selectedUser?._id, getMessages, subscribeToMessages, unsubscribeFromMessages, listenForTyping, stopListeningForTyping]);
 
     useEffect(() => {
         if (messageEndRef.current && messages) {
             messageEndRef.current.scrollIntoView({ behavior: "smooth" });
         }
-    }, [messages]);
+
+        // Mark unread messages as read
+        if (messages && messages.length > 0 && selectedUser) {
+            const unreadMessages = messages.filter(
+                msg => msg.senderId === selectedUser._id && !msg.isRead
+            );
+
+            if (unreadMessages.length > 0) {
+                const messageIds = unreadMessages.map(msg => msg._id);
+                markMessagesAsRead(messageIds);
+            }
+        }
+    }, [messages, selectedUser, markMessagesAsRead]);
 
     if (isMessagesLoading) {
         return <MessagesLoadingSkeleton />;
@@ -129,8 +149,8 @@ function ChatContainer() {
                                                     {/* Message bubble */}
                                                     <div
                                                         className={`${isMe
-                                                                ? "telegram-message-bubble-sent"
-                                                                : "telegram-message-bubble-received"
+                                                            ? "telegram-message-bubble-sent"
+                                                            : "telegram-message-bubble-received"
                                                             } ${showTime ? "" : (isMe ? "mr-8" : "ml-8")}`}
                                                     >
                                                         {/* Message text */}
@@ -178,7 +198,8 @@ function ChatContainer() {
                 )}
             </div>
 
-            {/* Message Input */}
+            {/* Typing Indicator & Input */}
+            <TypingIndicator />
             <MessageInput />
         </div>
     );

@@ -21,7 +21,8 @@ function MessageInput() {
     const fileInputRef = useRef(null);
     const textareaRef = useRef(null);
 
-    const { sendMessage, isSendinMessageLoading, selectedUser } = useChatStore();
+    const { sendMessage, isSendinMessageLoading, selectedUser, emitTyping } = useChatStore();
+    const typingTimeoutRef = useRef(null);
 
     useEffect(() => {
         // Auto-resize textarea
@@ -31,6 +32,28 @@ function MessageInput() {
             textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
         }
     }, [text]);
+
+    useEffect(() => {
+        return () => {
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+        };
+    }, []);
+
+    const handleInputChange = (e) => {
+        setText(e.target.value);
+
+        if (selectedUser) {
+            emitTyping(true);
+
+            // Clear previous timeout
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
+            // Set new timeout to stop typing after 3 seconds
+            typingTimeoutRef.current = setTimeout(() => {
+                emitTyping(false);
+            }, 3000);
+        }
+    };
 
     const handleSendMessage = async (e) => {
         e.preventDefault();
@@ -177,7 +200,7 @@ function MessageInput() {
                             ref={textareaRef}
                             placeholder="Type a message..."
                             value={text}
-                            onChange={(e) => setText(e.target.value)}
+                            onChange={handleInputChange}
                             onKeyPress={handleKeyPress}
                             rows={1}
                             className="telegram-input w-full resize-none min-h-[40px] max-h-[120px] py-2 px-3 pr-10"

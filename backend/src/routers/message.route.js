@@ -4,7 +4,7 @@ import multer from 'multer';
 const router = express.Router();
 
 // message controller 
-import { getAllContacts, getChatPartners, getMessagesById, messages, sendMessage } from '../controllers/message.controller.js';
+import { getAllContacts, getChatPartners, getMessagesById, messages, sendMessage, markMessageAsRead } from '../controllers/message.controller.js';
 import { protectRoute } from '../middleware/auth.middleware.js';
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -29,6 +29,12 @@ router.post(
     protectRoute,
     upload.single('image'),
     sendMessage
+);
+
+router.post(
+    "/read",
+    protectRoute,
+    markMessageAsRead
 );
 
 export default router; 

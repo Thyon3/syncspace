@@ -6,6 +6,7 @@
 import userModel from '../model/user.model.js';
 import messageModel from '../model/message.model.js';
 import cloudinary from '../config/cloudinary.js';
+import { getIO, getReceiverSocketId } from '../config/socket.js';
 
 export const getAllContacts = async function (req, res) {
     try {
@@ -106,6 +107,15 @@ export const sendMessage = async function (req, res) {
             text,
         });
         await newMessage.save();
+
+        // Emit real-time event to receiver
+        const io = getIO();
+        const receiverSocketId = getReceiverSocketId(recieverId.toString());
+
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('newMessage', newMessage);
+        }
+
         return res.json(newMessage);
     } catch (error) {
         return res.status(500).json({
@@ -144,6 +154,44 @@ export const getMessagesById = async function (req, res) {
 
         // return empty array instead of 404
         return res.json(messages);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            message: error.message,
+            type: error.name,
+        });
+    }
+};
+
+export const markMessageAsRead = async function (req, res) {
+    try {
+        const { messageIds } = req.body;
+        const userId = req.user._id;
+
+        if (!messageIds || !Array.isArray(messageIds) || messageIds.length === 0) {
+            return res.status(400).json({ message: "Invalid message IDs" });
+        }
+
+        await messageModel.updateMany(
+            { _id: { $in: messageIds }, recieverId: userId },
+            { $set: { isRead: true, readAt: new Date() } }
+        );
+
+        // Notify sender via Socket.IO
+        // Find one message to get the sender
+        const message = await messageModel.findOne({ _id: messageIds[0] });
+        if (message) {
+            const io = getIO();
+            const senderSocketId = getReceiverSocketId(message.senderId.toString());
+            if (senderSocketId) {
+                io.to(senderSocketId).emit('messagesRead', {
+                    messageIds,
+                    readBy: userId
+                });
+            }
+        }
+
+        return res.status(200).json({ message: "Messages marked as read" });
     } catch (error) {
         console.error(error);
         return res.status(500).json({

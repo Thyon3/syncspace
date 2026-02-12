@@ -21,7 +21,21 @@ const messageSchema = new mongoose.Schema({
     image: {
 
         type: String
-    }
+    },
+    isRead: {
+        type: Boolean,
+        default: false,
+    },
+    readAt: {
+        type: Date,
+    },
+    isDelivered: {
+        type: Boolean,
+        default: false,
+    },
+    deliveredAt: {
+        type: Date,
+    },
 }, { timestamps: true });
 
 const User = mongoose.model('Message', messageSchema);

@@ -1,12 +1,19 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
+import { createServer } from "http";
 import db from './config/db.js'
 import cors from 'cors';
 import { ENV } from './util/env.js';
 import cookieParser from 'cookie-parser';
+import { initializeSocket } from './config/socket.js';
 
 const app = express();
+const httpServer = createServer(app);
+
+// Initialize Socket.IO
+initializeSocket(httpServer);
+
 app.set("trust proxy", true);
 
 //
@@ -65,8 +72,8 @@ if (ENV.NODE_ENV === "production") {
 }
 
 // Start server
-
 db();
-app.listen(port, () => {
+httpServer.listen(port, () => {
   console.log(`✅ Server running on http://localhost:${port}`);
+  console.log(`🔌 Socket.IO initialized`);
 });
