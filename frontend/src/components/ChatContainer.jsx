@@ -134,56 +134,22 @@ function ChatContainer() {
                                     return (
                                         <div
                                             key={message._id}
-                                            className={`flex ${isMe ? "justify-end" : "justify-start"} px-4 py-1`}
+                                            className="px-4 py-1"
                                         >
-                                            <div className={`max-w-xs lg:max-w-md xl:max-w-lg ${isMe ? "order-2" : "order-1"}`}>
-                                                <div className="flex items-end gap-1">
-                                                    {/* Time display for consecutive messages */}
-                                                    {showTime && (
-                                                        <span className={`text-caption text-slate-500 mb-1 ${isMe ? "order-2 mr-2" : "order-1 ml-2"
-                                                            }`}>
-                                                            {formatMessageTime(message.createdAt)}
-                                                        </span>
-                                                    )}
+                                            <div className={`flex ${isMe ? "justify-end" : "justify-start"} items-end gap-1`}>
+                                                {/* Time display for consecutive messages */}
+                                                {showTime && (
+                                                    <span className={`text-caption text-slate-500 mb-2 ${isMe ? "order-2 mr-2" : "order-1 ml-2"
+                                                        }`}>
+                                                        {formatMessageTime(message.createdAt)}
+                                                    </span>
+                                                )}
 
-                                                    {/* Message bubble */}
-                                                    <div
-                                                        className={`${isMe
-                                                            ? "telegram-message-bubble-sent"
-                                                            : "telegram-message-bubble-received"
-                                                            } ${showTime ? "" : (isMe ? "mr-8" : "ml-8")}`}
-                                                    >
-                                                        {/* Message text */}
-                                                        {message.text && (
-                                                            <p className="text-message break-words">
-                                                                {message.text}
-                                                            </p>
-                                                        )}
-
-                                                        {/* Message image */}
-                                                        {message.image && (
-                                                            <img
-                                                                src={message.image}
-                                                                alt="Message image"
-                                                                className="rounded-lg max-w-full h-auto mb-1"
-                                                                loading="lazy"
-                                                            />
-                                                        )}
-
-                                                        {/* Message status and time for sent messages */}
-                                                        {isMe && (
-                                                            <div className="flex items-center justify-end gap-1 mt-1">
-                                                                <span className="text-xs text-white/70">
-                                                                    {formatMessageTime(message.createdAt)}
-                                                                </span>
-                                                                {message.isRead ? (
-                                                                    <CheckCheck className="w-3.5 h-3.5 text-white/70" />
-                                                                ) : (
-                                                                    <Check className="w-3.5 h-3.5 text-white/70" />
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    </div>
+                                                <div className={`${isMe ? "order-1" : "order-2"} max-w-[85%]`}>
+                                                    <MessageBubble
+                                                        message={message}
+                                                        isOwnMessage={isMe}
+                                                    />
                                                 </div>
                                             </div>
                                         </div>

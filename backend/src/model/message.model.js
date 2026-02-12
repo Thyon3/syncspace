@@ -19,8 +19,21 @@ const messageSchema = new mongoose.Schema({
 
     },
     image: {
-
         type: String
+    },
+    // New fields for generic file support
+    fileUrl: {
+        type: String,
+    },
+    fileType: {
+        type: String, // 'text', 'image', 'video', 'audio', 'file'
+        default: 'text',
+    },
+    fileName: {
+        type: String,
+    },
+    fileSize: {
+        type: String, // Storing as string for flexibility (e.g., "5 MB") or number
     },
     isRead: {
         type: Boolean,

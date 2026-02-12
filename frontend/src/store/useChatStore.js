@@ -186,6 +186,10 @@ export const useChatStore = create((set, get) => ({
             const formData = new FormData();
             if (messageData.text) formData.append("text", messageData.text);
             if (messageData.image) formData.append("image", messageData.image);
+            if (messageData.fileUrl) formData.append("fileUrl", messageData.fileUrl);
+            if (messageData.fileType) formData.append("fileType", messageData.fileType);
+            if (messageData.fileName) formData.append("fileName", messageData.fileName);
+            if (messageData.fileSize) formData.append("fileSize", messageData.fileSize);
 
             // optmistic update the ui immediately after the user sends the message 
 
@@ -196,6 +200,10 @@ export const useChatStore = create((set, get) => ({
                 recieverId: selectedUser._id,
                 text: messageData.text,
                 image: messageData.image,
+                fileUrl: messageData.fileUrl,
+                fileType: messageData.fileType,
+                fileName: messageData.fileName,
+                fileSize: messageData.fileSize,
                 createdAt: new Date().toISOString(),
                 isOptimistic: true
             };

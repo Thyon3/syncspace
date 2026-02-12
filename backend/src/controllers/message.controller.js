@@ -87,24 +87,36 @@ export const sendMessage = async function (req, res) {
             });
         }
 
-        const { text, image } = req.body;
-        if (!text && !image) {
+        const { text, image, fileUrl, fileType, fileName, fileSize } = req.body;
+
+        if (!text && !image && !fileUrl) {
             return res.status(400).json({
-                message: "message can not be empty",
+                message: "Message content cannot be empty",
             });
         }
 
-        let imageUrl;
-        // if the image is not null upload the image
-        if (image) {
+        let finalImageUrl = image;
+        let finalFileUrl = fileUrl;
+
+        // Handle Image Upload (Base64)
+        if (image && !image.startsWith('http')) {
             const imageUploader = await cloudinary.uploader.upload(image);
-            imageUrl = imageUploader.secure_url;
+            finalImageUrl = imageUploader.secure_url;
         }
+
+        // Handle Audio/File Upload (if sent as base64 or if we implement file handling middleware)
+        // For now, assuming frontend might send base64 or URL. 
+        // If we want to support raw file uploads, we need multer middleware in route.
+
         const newMessage = new messageModel({
             senderId,
             recieverId,
-            image: imageUrl,
             text,
+            image: finalImageUrl,
+            fileUrl: finalFileUrl,
+            fileType: fileType || (finalImageUrl ? 'image' : 'text'),
+            fileName,
+            fileSize
         });
         await newMessage.save();
 
