@@ -22,7 +22,7 @@ export const initializeSocket = (httpServer) => {
             console.log(`👤 User ${userId} mapped to socket ${socket.id}`);
 
             // Broadcast online status to all connected clients
-            io.emit('userOnline', userId);
+            io.emit('getOnlineUsers', Array.from(userSocketMap.keys()));
         }
 
         // Handle typing events
@@ -54,7 +54,7 @@ export const initializeSocket = (httpServer) => {
             if (userId && userId !== 'undefined') {
                 userSocketMap.delete(userId);
                 // Broadcast offline status
-                io.emit('userOffline', userId);
+                io.emit('getOnlineUsers', Array.from(userSocketMap.keys()));
             }
         });
     });

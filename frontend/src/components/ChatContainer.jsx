@@ -12,9 +12,11 @@ import { Check, CheckCheck } from "lucide-react";
 function ChatContainer() {
     const {
         selectedUser,
+        selectedChat,
         messages,
         isMessagesLoading,
         getMessages,
+        getMessagesByChatId,
         subscribeToMessages,
         unsubscribeFromMessages,
         listenForTyping,
@@ -26,7 +28,10 @@ function ChatContainer() {
     const messageEndRef = useRef(null);
 
     useEffect(() => {
-        if (selectedUser?._id) {
+        if (selectedChat?._id) {
+            getMessagesByChatId(selectedChat._id);
+            subscribeToMessages();
+        } else if (selectedUser?._id) {
             getMessages(selectedUser._id);
             subscribeToMessages();
             listenForTyping();
@@ -36,7 +41,7 @@ function ChatContainer() {
             unsubscribeFromMessages();
             stopListeningForTyping();
         };
-    }, [selectedUser?._id, getMessages, subscribeToMessages, unsubscribeFromMessages, listenForTyping, stopListeningForTyping]);
+    }, [selectedUser?._id, selectedChat?._id, getMessages, getMessagesByChatId, subscribeToMessages, unsubscribeFromMessages, listenForTyping, stopListeningForTyping]);
 
     useEffect(() => {
         if (messageEndRef.current && messages) {
@@ -44,9 +49,10 @@ function ChatContainer() {
         }
 
         // Mark unread messages as read
-        if (messages && messages.length > 0 && selectedUser) {
+        if (messages && messages.length > 0 && (selectedUser || selectedChat)) {
+            const senderToMark = selectedUser?._id;
             const unreadMessages = messages.filter(
-                msg => msg.senderId === selectedUser._id && !msg.isRead
+                msg => (senderToMark ? msg.senderId === senderToMark : msg.senderId !== authUser._id) && !msg.isRead
             );
 
             if (unreadMessages.length > 0) {
@@ -54,7 +60,7 @@ function ChatContainer() {
                 markMessagesAsRead(messageIds);
             }
         }
-    }, [messages, selectedUser, markMessagesAsRead]);
+    }, [messages, selectedUser, selectedChat, markMessagesAsRead, authUser._id]);
 
     if (isMessagesLoading) {
         return <MessagesLoadingSkeleton />;
@@ -101,7 +107,7 @@ function ChatContainer() {
         return groups;
     };
 
-    if (!selectedUser) {
+    if (!selectedUser && !selectedChat) {
         return <NoSelectedUserPlaceHolder />;
     }
 
@@ -127,7 +133,7 @@ function ChatContainer() {
 
                                 {/* Messages for this date */}
                                 {dateMessages.map((message, index) => {
-                                    const isMe = message.senderId === authUser._id;
+                                    const isMe = message.senderId === authUser._id || (message.senderId?._id === authUser._id);
                                     const showTime = index === 0 ||
                                         new Date(dateMessages[index - 1].createdAt).getHours() !== new Date(message.createdAt).getHours();
 
@@ -137,6 +143,16 @@ function ChatContainer() {
                                             className="px-4 py-1"
                                         >
                                             <div className={`flex ${isMe ? "justify-end" : "justify-start"} items-end gap-1`}>
+                                                {!isMe && selectedChat?.type === 'group' && (
+                                                    <div className="flex-shrink-0 mb-1">
+                                                        <img
+                                                            src={message.senderId?.profilePic || "/vite.svg"}
+                                                            alt=""
+                                                            className="w-8 h-8 rounded-full border border-slate-700"
+                                                        />
+                                                    </div>
+                                                )}
+
                                                 {/* Time display for consecutive messages */}
                                                 {showTime && (
                                                     <span className={`text-caption text-slate-500 mb-2 ${isMe ? "order-2 mr-2" : "order-1 ml-2"
@@ -160,7 +176,7 @@ function ChatContainer() {
                         <div ref={messageEndRef} />
                     </div>
                 ) : (
-                    <NoChatHistoryPlaceHolder name={selectedUser.name} />
+                    <NoChatHistoryPlaceHolder name={selectedChat?.groupName || selectedUser?.name || "this chat"} />
                 )}
             </div>
 

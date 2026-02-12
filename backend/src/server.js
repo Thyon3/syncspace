@@ -35,6 +35,7 @@ const __dirname = path.dirname(__filename);
 import authrouter from "./routers/auth.route.js";
 import messageRouter from './routers/message.route.js';
 import userRouter from './routers/user.route.js';
+import chatRouter from './routers/chat.route.js';
 
 // Port
 const port = ENV.PORT || 3000;
@@ -44,6 +45,7 @@ app.use(express.json());
 app.use("/api/auth", authrouter);
 app.use("/api/messages", messageRouter);
 app.use("/api/user", userRouter);
+app.use("/api/chats", chatRouter);
 
 // Example route
 app.get("/fuck", (req, res) => {

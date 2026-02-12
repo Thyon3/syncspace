@@ -4,9 +4,9 @@ import { useChatStore } from "../store/useChatStore";
 import { getRelativeTime } from "../lib/utils";
 
 function ChatHeader() {
-    const { selectedUser, setSelectedUser } = useChatStore();
+    const { selectedUser, setSelectedUser, selectedChat, setSelectedChat, onlineUsers } = useChatStore();
 
-    if (!selectedUser) {
+    if (!selectedUser && !selectedChat) {
         return (
             <div className="telegram-header text-center text-slate-400 text-sm">
                 Select a conversation to start messaging
@@ -14,7 +14,23 @@ function ChatHeader() {
         );
     }
 
-    const isOnline = selectedUser.isOnline;
+    const isGroup = selectedChat?.type === 'group';
+    const displayInfo = isGroup ? {
+        name: selectedChat.groupName,
+        image: selectedChat.groupImage,
+        status: `${selectedChat.members?.length || 0} members`,
+        isOnline: false
+    } : {
+        name: selectedUser?.name || "User",
+        image: selectedUser?.profilePic,
+        status: (selectedUser?.isOnline || onlineUsers.includes(selectedUser?._id)) ? 'online' : getRelativeTime(selectedUser?.lastSeen),
+        isOnline: (selectedUser?.isOnline || onlineUsers.includes(selectedUser?._id))
+    };
+
+    const handleBack = () => {
+        if (selectedUser) setSelectedUser(null);
+        if (selectedChat) setSelectedChat(null);
+    };
 
     return (
         <div className="telegram-header flex items-center justify-between">
@@ -22,7 +38,7 @@ function ChatHeader() {
             <div className="flex items-center gap-3 flex-1 min-w-0">
                 {/* Back Button (Mobile) */}
                 <button
-                    onClick={() => setSelectedUser(null)}
+                    onClick={handleBack}
                     className="lg:hidden telegram-icon-button"
                     title="Back"
                 >
@@ -31,32 +47,32 @@ function ChatHeader() {
 
                 {/* Avatar */}
                 <div className="relative flex-shrink-0">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                        {selectedUser.profilePic ? (
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center overflow-hidden">
+                        {displayInfo.image ? (
                             <img
-                                src={selectedUser.profilePic}
-                                alt={selectedUser.name}
-                                className="w-full h-full rounded-full object-cover"
+                                src={displayInfo.image}
+                                alt={displayInfo.name}
+                                className="w-full h-full object-cover"
                             />
                         ) : (
                             <span className="text-white font-semibold">
-                                {selectedUser.name?.charAt(0)?.toUpperCase() || 'U'}
+                                {displayInfo.name?.charAt(0)?.toUpperCase() || 'U'}
                             </span>
                         )}
                     </div>
                     {/* Online Indicator */}
-                    {isOnline && (
+                    {displayInfo.isOnline && (
                         <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-telegram-dark"></div>
                     )}
                 </div>
 
-                {/* User Info */}
+                {/* Info */}
                 <div className="min-w-0 flex-1">
                     <h3 className="text-title text-slate-100 truncate">
-                        {selectedUser.name || "Unknown User"}
+                        {displayInfo.name}
                     </h3>
                     <p className="text-caption text-slate-400 truncate">
-                        {isOnline ? 'online' : getRelativeTime(selectedUser.lastSeen)}
+                        {displayInfo.status}
                     </p>
                 </div>
             </div>
