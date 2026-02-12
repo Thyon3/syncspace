@@ -1,18 +1,22 @@
-import React from 'react';
-import { Routes, Route } from 'react-router';
-import ChatPage from '../pages/chatPage';
+import React, { useState } from 'react';
 import { userAuthStore } from '../store/userAuthStore';
+import { useChatStore } from '../store/useChatStore';
 import { Toaster } from 'react-hot-toast';
+import ChatsList from './ChatsList';
+import ChatContainer from './ChatContainer';
+import NoSelectedUserPlaceHolder from './NoSelectedUserPlaceHolder';
 
 function ChatApp() {
   const { authUser } = userAuthStore();
+  const { selectedUser } = useChatStore();
+  const [searchQuery, setSearchQuery] = useState('');
 
   return (
     <div className="h-screen flex bg-telegram-dark overflow-hidden">
       {/* Telegram Desktop Layout - Three Columns */}
       <div className="flex h-full w-full">
         {/* Left Sidebar - Folders and Navigation (Telegram style) */}
-        <div className="w-80 telegram-sidebar flex flex-col">
+        <div className="hidden lg:flex w-80 telegram-sidebar flex-col">
           {/* User Profile Section */}
           <div className="telegram-header">
             <div className="flex items-center gap-3">
@@ -26,12 +30,12 @@ function ChatApp() {
                 <p className="text-caption text-slate-400">Active now</p>
               </div>
               <div className="flex items-center gap-1">
-                <button className="telegram-icon-button">
+                <button className="telegram-icon-button" title="New Chat">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                 </button>
-                <button className="telegram-icon-button">
+                <button className="telegram-icon-button" title="Search">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
@@ -53,28 +57,12 @@ function ChatApp() {
                 </div>
                 <div className="flex-1">
                   <h4 className="text-subtitle text-slate-100">All Chats</h4>
-                  <p className="text-caption text-slate-400">24 unread messages</p>
+                  <p className="text-caption text-slate-400">Your conversations</p>
                 </div>
-                <span className="text-unread">24</span>
               </div>
             </div>
 
-            {/* Other Folders */}
-            <div className="telegram-chat-item">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-subtitle text-slate-100">Work</h4>
-                  <p className="text-caption text-slate-400">3 unread messages</p>
-                </div>
-                <span className="text-unread">3</span>
-              </div>
-            </div>
-
+            {/* Personal Folder */}
             <div className="telegram-chat-item">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
@@ -84,11 +72,12 @@ function ChatApp() {
                 </div>
                 <div className="flex-1">
                   <h4 className="text-subtitle text-slate-100">Personal</h4>
-                  <p className="text-caption text-slate-400">No unread messages</p>
+                  <p className="text-caption text-slate-400">Private chats</p>
                 </div>
               </div>
             </div>
 
+            {/* Groups Folder */}
             <div className="telegram-chat-item">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
@@ -98,24 +87,8 @@ function ChatApp() {
                 </div>
                 <div className="flex-1">
                   <h4 className="text-subtitle text-slate-100">Groups</h4>
-                  <p className="text-caption text-slate-400">12 unread messages</p>
+                  <p className="text-caption text-slate-400">Group chats</p>
                 </div>
-                <span className="text-unread">12</span>
-              </div>
-            </div>
-
-            <div className="telegram-chat-item">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-subtitle text-slate-100">Unread</h4>
-                  <p className="text-caption text-slate-400">9 unread messages</p>
-                </div>
-                <span className="text-unread">9</span>
               </div>
             </div>
 
@@ -130,7 +103,7 @@ function ChatApp() {
                 </div>
                 <div className="flex-1">
                   <h4 className="text-subtitle text-slate-100">Archive</h4>
-                  <p className="text-caption text-slate-400">No messages</p>
+                  <p className="text-caption text-slate-400">Archived chats</p>
                 </div>
               </div>
             </div>
@@ -150,12 +123,12 @@ function ChatApp() {
         </div>
 
         {/* Middle Column - Chat List */}
-        <div className="w-96 telegram-chat-list flex flex-col">
+        <div className="w-full lg:w-96 telegram-chat-list flex flex-col">
           {/* Chat List Header */}
           <div className="telegram-header">
             <div className="flex items-center gap-3">
               <h2 className="text-title text-slate-100 flex-1">Chats</h2>
-              <button className="telegram-icon-button">
+              <button className="telegram-icon-button" title="New Chat">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 01-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
                 </svg>
@@ -166,6 +139,8 @@ function ChatApp() {
               <input
                 type="text"
                 placeholder="Search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="telegram-input w-full"
               />
             </div>
@@ -173,19 +148,17 @@ function ChatApp() {
 
           {/* Chat List Content */}
           <div className="flex-1 overflow-y-auto">
-            <Routes>
-              <Route path="/" element={<ChatPage />} />
-              <Route path="/chat/:id" element={<ChatPage />} />
-            </Routes>
+            <ChatsList />
           </div>
         </div>
 
         {/* Right Column - Chat Area */}
-        <div className="flex-1 telegram-chat-area flex flex-col">
-          <Routes>
-            <Route path="/" element={<div className="flex-1 flex items-center justify-center text-slate-400">Select a chat to start messaging</div>} />
-            <Route path="/chat/:id" element={<ChatPage />} />
-          </Routes>
+        <div className="hidden lg:flex flex-1 telegram-chat-area flex-col">
+          {selectedUser ? (
+            <ChatContainer />
+          ) : (
+            <NoSelectedUserPlaceHolder />
+          )}
         </div>
       </div>
 
