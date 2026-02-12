@@ -3,13 +3,41 @@ import { userAuthStore } from '../store/userAuthStore';
 import { useChatStore } from '../store/useChatStore';
 import { Toaster } from 'react-hot-toast';
 import ChatsList from './ChatsList';
+import CreateGroupModal from './CreateGroupModal';
 import ChatContainer from './ChatContainer';
 import NoSelectedUserPlaceHolder from './NoSelectedUserPlaceHolder';
 
+import { useEffect } from 'react';
+
 function ChatApp() {
   const { authUser } = userAuthStore();
-  const { selectedUser } = useChatStore();
+  const {
+    selectedUser,
+    selectedChat,
+    searchContacts,
+    searchMessages,
+    searchResults,
+    isSearchLoading,
+    clearSearchResults,
+    setSelectedUser,
+    setSelectedChat
+  } = useChatStore();
   const [searchQuery, setSearchQuery] = useState('');
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
+
+  // Search Debounce Logic
+  useEffect(() => {
+    if (searchQuery.trim().length > 1) {
+      const delayDebounceFn = setTimeout(() => {
+        searchContacts(searchQuery);
+        searchMessages(searchQuery);
+      }, 500);
+
+      return () => clearTimeout(delayDebounceFn);
+    } else {
+      clearSearchResults();
+    }
+  }, [searchQuery, searchContacts, searchMessages, clearSearchResults]);
 
   return (
     <div className="h-screen flex bg-telegram-dark overflow-hidden">
@@ -30,7 +58,11 @@ function ChatApp() {
                 <p className="text-caption text-slate-400">Active now</p>
               </div>
               <div className="flex items-center gap-1">
-                <button className="telegram-icon-button" title="New Chat">
+                <button
+                  onClick={() => setShowCreateGroupModal(true)}
+                  className="telegram-icon-button"
+                  title="New Chat"
+                >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
@@ -123,14 +155,16 @@ function ChatApp() {
         </div>
 
         {/* Middle Column - Chat List */}
-        {/* On mobile: show only if no user is selected */}
-        {/* On desktop: always show */}
-        <div className={`${selectedUser ? 'hidden lg:flex' : 'flex'} w-full lg:w-96 telegram-chat-list flex-col`}>
+        <div className={`${selectedUser || selectedChat ? 'hidden lg:flex' : 'flex'} w-full lg:w-96 telegram-chat-list flex-col`}>
           {/* Chat List Header */}
           <div className="telegram-header">
             <div className="flex items-center gap-3">
               <h2 className="text-title text-slate-100 flex-1">Chats</h2>
-              <button className="telegram-icon-button" title="New Chat">
+              <button
+                onClick={() => setShowCreateGroupModal(true)}
+                className="telegram-icon-button"
+                title="New Chat"
+              >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 01-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
                 </svg>
@@ -149,16 +183,90 @@ function ChatApp() {
           </div>
 
           {/* Chat List Content */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto relative">
+            {searchQuery.trim().length > 1 ? (
+              <div className="absolute inset-0 bg-telegram-dark z-10 flex flex-col">
+                {/* Search Results */}
+                {isSearchLoading ? (
+                  <div className="p-4 text-center text-slate-400">Searching...</div>
+                ) : (
+                  <div className="flex-1 overflow-y-auto p-2">
+                    {/* People & Groups */}
+                    {(searchResults.users.length > 0 || searchResults.groups.length > 0) && (
+                      <div className="mb-4">
+                        <h3 className="text-[11px] font-bold text-telegram-blue uppercase tracking-wider px-3 mb-2">People & Groups</h3>
+                        {searchResults.users.map(user => (
+                          <div
+                            key={user._id}
+                            onClick={() => { setSelectedUser(user); setSearchQuery(''); }}
+                            className="telegram-chat-item flex items-center gap-3 cursor-pointer"
+                          >
+                            <img src={user.profilePic || "/vite.svg"} className="w-10 h-10 rounded-full object-cover" alt="" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-subtitle text-slate-100 truncate">{user.name}</p>
+                              <p className="text-caption text-slate-400 truncate">{user.email}</p>
+                            </div>
+                          </div>
+                        ))}
+                        {searchResults.groups.map(group => (
+                          <div
+                            key={group._id}
+                            onClick={() => { setSelectedChat(group); setSearchQuery(''); }}
+                            className="telegram-chat-item flex items-center gap-3 cursor-pointer"
+                          >
+                            <img src={group.groupImage || "/vite.svg"} className="w-10 h-10 rounded-full object-cover" alt="" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-subtitle text-slate-100 truncate">{group.groupName}</p>
+                              <p className="text-caption text-slate-400 truncate">Group</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Messages */}
+                    {searchResults.messages.length > 0 && (
+                      <div>
+                        <h3 className="text-[11px] font-bold text-telegram-blue uppercase tracking-wider px-3 mb-2">Messages</h3>
+                        {searchResults.messages.map(msg => (
+                          <div
+                            key={msg._id}
+                            onClick={() => {
+                              if (msg.chatId.type === 'group') {
+                                setSelectedChat(msg.chatId);
+                              } else {
+                                // Handle direct message context if needed (finding the other member)
+                                // For now just select the chat if chatId is populated
+                                setSelectedChat(msg.chatId);
+                              }
+                              setSearchQuery('');
+                            }}
+                            className="telegram-chat-item flex flex-col gap-1 cursor-pointer"
+                          >
+                            <div className="flex justify-between items-center">
+                              <span className="text-subtitle text-slate-100 font-medium">{msg.senderId?.name}</span>
+                              <span className="text-[10px] text-slate-500">{new Date(msg.createdAt).toLocaleDateString()}</span>
+                            </div>
+                            <p className="text-caption text-slate-400 line-clamp-2 italic">"{msg.text}"</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {searchResults.users.length === 0 && searchResults.groups.length === 0 && searchResults.messages.length === 0 && (
+                      <div className="p-4 text-center text-slate-400">No results found</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : null}
             <ChatsList />
           </div>
         </div>
 
         {/* Right Column - Chat Area */}
-        {/* On mobile: show only if user is selected */}
-        {/* On desktop: always show */}
-        <div className={`${selectedUser ? 'flex' : 'hidden lg:flex'} flex-1 telegram-chat-area flex-col`}>
-          {selectedUser ? (
+        <div className={`${selectedUser || selectedChat ? 'flex' : 'hidden lg:flex'} flex-1 telegram-chat-area flex-col`}>
+          {selectedUser || selectedChat ? (
             <ChatContainer />
           ) : (
             <NoSelectedUserPlaceHolder />
@@ -166,7 +274,6 @@ function ChatApp() {
         </div>
       </div>
 
-      {/* Toast Notifications */}
       <Toaster
         position="top-right"
         toastOptions={{
@@ -191,6 +298,11 @@ function ChatApp() {
           },
         }}
       />
+
+      {/* Modals */}
+      {showCreateGroupModal && (
+        <CreateGroupModal onClose={() => setShowCreateGroupModal(false)} />
+      )}
     </div>
   );
 }
