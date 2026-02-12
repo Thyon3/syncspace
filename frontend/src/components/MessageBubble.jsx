@@ -1,9 +1,12 @@
-import React from 'react';
-import { formatMessageTime } from '../lib/utils';
-import { FileText, Download, Play, Pause } from 'lucide-react';
+import { FileText, Download, Play, Pause, Reply, Edit, Trash2 } from 'lucide-react';
 import { useState, useRef } from 'react';
+import { useChatStore } from '../store/useChatStore';
+import { userAuthStore } from '../store/userAuthStore';
 
 function MessageBubble({ message, isOwnMessage }) {
+    const { selectedChat, setReplyingTo, setEditingMessage, deleteMessage } = useChatStore();
+    const { authUser } = userAuthStore();
+    const isGroup = selectedChat?.type === 'group';
     const bubbleClass = isOwnMessage
         ? 'telegram-message-bubble-sent ml-auto'
         : 'telegram-message-bubble-received mr-auto';
@@ -99,21 +102,53 @@ function MessageBubble({ message, isOwnMessage }) {
 
         // 4. Text Only
         return (
-            <p className="text-message break-words whitespace-pre-wrap">
+            <p className={`text-message break-words whitespace-pre-wrap ${message.isDeleted ? 'italic opacity-60' : ''}`}>
                 {message.text}
             </p>
         );
     };
 
+    if (message.isDeleted) {
+        return (
+            <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-1 telegram-fade-in`}>
+                <div className={bubbleClass + ' opacity-50 italic text-[13px] py-1 px-3 border border-slate-700/30'}>
+                    Message deleted
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-1 telegram-fade-in`}>
+        <div id={`msg-${message._id}`} className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-1 telegram-fade-in group relative`}>
             <div className={bubbleClass}>
                 <div className="flex flex-col">
+                    {/* Reply Context */}
+                    {message.replyTo && (
+                        <div
+                            className="bg-black/10 border-l-2 border-telegram-blue p-1.5 mb-1 rounded-sm cursor-pointer hover:bg-black/20 transition-colors"
+                            onClick={() => {
+                                // Scroll to message logic could be added here
+                                const el = document.getElementById(`msg-${message.replyTo._id}`);
+                                el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }}
+                        >
+                            <p className="text-[11px] font-bold text-telegram-blue truncate">
+                                {message.replyTo.senderId?.name || "User"}
+                            </p>
+                            <p className="text-[12px] text-slate-300 truncate opacity-80">
+                                {message.replyTo.text || (message.replyTo.image ? "Photo" : "Attachment")}
+                            </p>
+                        </div>
+                    )}
+
                     {/* Message content */}
                     {renderContent()}
 
                     {/* Timestamp and status */}
-                    <div className="flex items-center justify-end gap-1 mt-1">
+                    <div className="flex items-center justify-end gap-1.5 mt-0.5 select-none">
+                        {message.isEdited && (
+                            <span className="text-[10px] opacity-50 italic">edited</span>
+                        )}
                         <span className="text-[10px] opacity-70">
                             {formatMessageTime(message.createdAt)}
                         </span>
@@ -123,18 +158,51 @@ function MessageBubble({ message, isOwnMessage }) {
                             <div className="flex items-center">
                                 {/* Double check mark for read messages */}
                                 {message.isRead ? (
-                                    <svg className="w-4 h-4 text-telegram-blue-hover" fill="currentColor" viewBox="0 0 20 20"> {/* Highlighted blue for read */}
+                                    <svg className="w-3.5 h-3.5 text-telegram-blue-hover" fill="currentColor" viewBox="0 0 20 20">
                                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                         <path fillRule="evenodd" d="M14.707 5.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L8 10.586l5.293-5.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                     </svg>
                                 ) : (
-                                    <svg className="w-4 h-4 opacity-70" fill="currentColor" viewBox="0 0 20 20">
+                                    <svg className="w-3.5 h-3.5 opacity-60" fill="currentColor" viewBox="0 0 20 20">
                                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                     </svg>
                                 )}
                             </div>
                         )}
                     </div>
+                </div>
+
+                {/* Message Actions Menu (Absolute positioned or sibling) */}
+                <div className={`message-actions absolute ${isOwnMessage ? 'right-full mr-2' : 'left-full ml-2'} top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity`}>
+                    <button
+                        onClick={() => setReplyingTo(message)}
+                        className="p-1.5 bg-telegram-sidebar rounded-full hover:bg-slate-700 text-slate-400 hover:text-telegram-blue transition-all shadow-lg"
+                        title="Reply"
+                    >
+                        <Reply className="w-4 h-4" />
+                    </button>
+                    {isOwnMessage && (
+                        <>
+                            <button
+                                onClick={() => setEditingMessage(message)}
+                                className="p-1.5 bg-telegram-sidebar rounded-full hover:bg-slate-700 text-slate-400 hover:text-emerald-500 transition-all shadow-lg"
+                                title="Edit"
+                            >
+                                <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (window.confirm("Delete this message?")) {
+                                        deleteMessage(message._id);
+                                    }
+                                }}
+                                className="p-1.5 bg-telegram-sidebar rounded-full hover:bg-slate-700 text-slate-400 hover:text-red-500 transition-all shadow-lg"
+                                title="Delete"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
         </div>

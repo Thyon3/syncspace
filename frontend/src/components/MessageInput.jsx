@@ -7,8 +7,10 @@ import {
     Paperclip,
     X,
     Mic,
+    Mic,
     Image as ImageIcon,
-    Sticker
+    Sticker,
+    Check
 } from "lucide-react";
 
 function MessageInput() {
@@ -25,7 +27,17 @@ function MessageInput() {
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
 
-    const { sendMessage, isSendinMessageLoading, selectedUser, emitTyping } = useChatStore();
+    const {
+        sendMessage,
+        isSendinMessageLoading,
+        selectedUser,
+        emitTyping,
+        replyingTo,
+        editingMessage,
+        setReplyingTo,
+        setEditingMessage,
+        editMessage
+    } = useChatStore();
     const typingTimeoutRef = useRef(null);
 
     useEffect(() => {
@@ -36,6 +48,17 @@ function MessageInput() {
             textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
         }
     }, [text]);
+
+    useEffect(() => {
+        if (editingMessage) {
+            setText(editingMessage.text || "");
+            if (textareaRef.current) {
+                textareaRef.current.focus();
+            }
+        } else {
+            setText("");
+        }
+    }, [editingMessage]);
 
     useEffect(() => {
         return () => {
@@ -63,30 +86,32 @@ function MessageInput() {
         e.preventDefault();
 
         if (!text.trim() && !image && !file) return;
-        if (!selectedUser) return;
 
         try {
-            await sendMessage({
-                text: text.trim(),
-                image: image,
-                fileUrl: file, // For now passing file obj, store handles it
-                fileType: file ? 'file' : (image ? 'image' : 'text'),
-                fileName: file?.name,
-                fileSize: file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : null,
-                receiverId: selectedUser._id,
-            });
+            if (editingMessage) {
+                await editMessage(editingMessage._id, text.trim());
+            } else {
+                await sendMessage({
+                    text: text.trim(),
+                    image: image,
+                    fileUrl: file,
+                    fileType: file ? 'file' : (image ? 'image' : 'text'),
+                    fileName: file?.name,
+                    fileSize: file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : null,
+                    receiverId: selectedUser?._id,
+                });
+            }
 
             setText("");
             setImage(null);
             setImagePreview(null);
             setFile(null);
 
-            // Reset textarea height
             if (textareaRef.current) {
                 textareaRef.current.style.height = 'auto';
             }
         } catch (error) {
-            toast.error("Failed to send message: " + error.message);
+            toast.error("Failed to send: " + error.message);
         }
     };
 
@@ -225,6 +250,30 @@ function MessageInput() {
 
     return (
         <div className="border-t border-telegram-sidebar bg-telegram-sidebar">
+            {/* Reply / Edit Preview */}
+            {(replyingTo || editingMessage) && (
+                <div className="px-4 py-2 border-b border-telegram-sidebar bg-telegram-hover/30 flex items-center gap-3 animate-in slide-in-from-bottom-2">
+                    <div className="w-1 self-stretch bg-telegram-blue rounded-full"></div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-bold text-telegram-blue uppercase tracking-wider mb-0.5">
+                            {editingMessage ? "Edit Message" : `Reply to ${replyingTo.senderId?.name || "User"}`}
+                        </p>
+                        <p className="text-sm text-slate-300 truncate italic">
+                            {editingMessage ? editingMessage.text : replyingTo.text}
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => {
+                            if (editingMessage) setEditingMessage(null);
+                            else setReplyingTo(null);
+                        }}
+                        className="telegram-icon-button p-1 hover:bg-slate-700/50"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+            )}
+
             {/* Image/File Preview */}
             {(imagePreview || file) && (
                 <div className="px-4 py-2 border-b border-telegram-sidebar flex items-center gap-2">
@@ -340,7 +389,7 @@ function MessageInput() {
                                 {isSendinMessageLoading ? (
                                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                                 ) : (
-                                    <Send className="w-5 h-5" />
+                                    editingMessage ? <Check className="w-5 h-5" /> : <Send className="w-5 h-5" />
                                 )}
                             </button>
                         )}
