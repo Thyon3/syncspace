@@ -7,10 +7,21 @@ const messageSchema = new mongoose.Schema({
         type: mongoose.Types.ObjectId,
         ref: 'User',
     },
+
+    chatId: {
+        type: mongoose.Types.ObjectId,
+        ref: 'Chat',
+        required: false, // Optional for backward compatibility during migration
+    },
     recieverId: {
-        required: true,
+        required: false, // Made optional as we move to chatId
         type: mongoose.Types.ObjectId,
         ref: 'User',
+    },
+    replyTo: {
+        type: mongoose.Types.ObjectId,
+        ref: 'Message',
+        required: false,
     },
     text: {
         maxlength: 2000,
@@ -48,6 +59,14 @@ const messageSchema = new mongoose.Schema({
     },
     deliveredAt: {
         type: Date,
+    },
+    isEdited: {
+        type: Boolean,
+        default: false,
+    },
+    isDeleted: {
+        type: Boolean,
+        default: false,
     },
 }, { timestamps: true });
 
