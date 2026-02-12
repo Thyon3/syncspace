@@ -5,6 +5,7 @@ import { generateToken } from '../util/util.js'
 import { sendWelcomeEmail } from '../email/email_handler.js';
 import { ENV } from '../util/env.js';
 import jwt from 'jsonwebtoken';
+
 export const signUp = async function (req, res) {
     try {
         const { name, email, password } = req.body;
@@ -113,8 +114,10 @@ export const login = async (req, res) => {
         });
     }
 };
-// logout 
 
+
+
+// logout 
 export const logout = async function (_, res) {
     res.cookie("jwt", "", { maxAge: 0 });
     res.status(200).json({

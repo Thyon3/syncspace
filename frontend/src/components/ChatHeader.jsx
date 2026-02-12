@@ -1,112 +1,90 @@
 import React from "react";
-import { X as XIcon, ArrowLeft, Phone, Video, MoreVertical, Circle } from "lucide-react";
+import { X as XIcon, ArrowLeft, Phone, Video, Search, MoreVertical } from "lucide-react";
 import { useChatStore } from "../store/useChatStore";
+import { getRelativeTime } from "../lib/utils";
 
 function ChatHeader() {
     const { selectedUser, setSelectedUser } = useChatStore();
 
     if (!selectedUser) {
         return (
-            <div className="w-full glass-dark border-b border-slate-700/30 py-4 text-center text-slate-400 text-sm">
+            <div className="telegram-header text-center text-slate-400 text-sm">
                 Select a conversation to start messaging
             </div>
         );
     }
 
     const isOnline = selectedUser.isOnline;
-    const lastActive = selectedUser.lastActive;
-
-    const formatLastActive = (timestamp) => {
-        if (!timestamp) return "";
-        const date = new Date(timestamp);
-        const now = new Date();
-        const diffInMinutes = (now - date) / (1000 * 60);
-
-        if (diffInMinutes < 1) return "Active now";
-        if (diffInMinutes < 60) return `${Math.floor(diffInMinutes)}m ago`;
-        if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
-        return `${Math.floor(diffInMinutes / 1440)}d ago`;
-    };
 
     return (
-        <div className="w-full flex items-center justify-between glass-dark border-b border-slate-700/30 px-4 py-3 shadow-lg">
+        <div className="telegram-header flex items-center justify-between">
             {/* Left Section */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
                 {/* Back Button (Mobile) */}
                 <button
                     onClick={() => setSelectedUser(null)}
-                    className="md:hidden p-2 rounded-xl hover:bg-slate-700/50 transition-all duration-200"
+                    className="lg:hidden telegram-icon-button"
+                    title="Back"
                 >
-                    <ArrowLeft className="w-5 h-5 text-slate-300" />
+                    <ArrowLeft className="w-5 h-5" />
                 </button>
 
-                {/* Avatar and User Info */}
-                <div className="flex items-center gap-3">
-                    <div className="relative">
-                        <img
-                            src={selectedUser.profilePic ?? "/vite.svg"}
-                            alt={selectedUser.name ?? "User"}
-                            className="w-10 h-10 rounded-full object-cover border-2 border-slate-600"
-                        />
-                        {/* Online Indicator */}
-                        {isOnline ? (
-                            <>
-                                <span className="absolute bottom-0 right-0 block w-3 h-3 bg-green-500 rounded-full ring-2 ring-slate-900"></span>
-                                <span className="absolute bottom-0 right-0 block w-3 h-3 bg-green-500 rounded-full animate-ping"></span>
-                            </>
+                {/* Avatar */}
+                <div className="relative flex-shrink-0">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                        {selectedUser.profilePic ? (
+                            <img
+                                src={selectedUser.profilePic}
+                                alt={selectedUser.name}
+                                className="w-full h-full rounded-full object-cover"
+                            />
                         ) : (
-                            <span className="absolute bottom-0 right-0 block w-3 h-3 bg-slate-500 rounded-full ring-2 ring-slate-900"></span>
+                            <span className="text-white font-semibold">
+                                {selectedUser.name?.charAt(0)?.toUpperCase() || 'U'}
+                            </span>
                         )}
                     </div>
+                    {/* Online Indicator */}
+                    {isOnline && (
+                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-telegram-dark"></div>
+                    )}
+                </div>
 
-                    <div className="min-w-0">
-                        <h3 className="text-slate-100 font-semibold text-sm truncate">
-                            {selectedUser.name ?? "Unknown User"}
-                        </h3>
-                        <div className="flex items-center gap-1">
-                            <Circle className={`w-1.5 h-1.5 fill-current ${isOnline ? 'text-green-400' : 'text-slate-500'
-                                }`} />
-                            <p className="text-xs text-slate-400 truncate">
-                                {isOnline ? 'Active now' : formatLastActive(lastActive)}
-                            </p>
-                        </div>
-                    </div>
+                {/* User Info */}
+                <div className="min-w-0 flex-1">
+                    <h3 className="text-title text-slate-100 truncate">
+                        {selectedUser.name || "Unknown User"}
+                    </h3>
+                    <p className="text-caption text-slate-400 truncate">
+                        {isOnline ? 'online' : getRelativeTime(selectedUser.lastSeen)}
+                    </p>
                 </div>
             </div>
 
             {/* Right Section - Action Buttons */}
             <div className="flex items-center gap-1">
-                {/* Voice Call Button */}
+                {/* Search Button */}
                 <button
-                    className="p-2.5 rounded-xl hover:bg-slate-700/50 transition-all duration-200 group hidden sm:flex"
-                    title="Voice call"
+                    className="telegram-icon-button hidden sm:flex"
+                    title="Search"
                 >
-                    <Phone className="w-4 h-4 text-slate-400 group-hover:text-cyan-400" />
+                    <Search className="w-5 h-5" />
                 </button>
 
-                {/* Video Call Button */}
+                {/* Voice Call Button */}
                 <button
-                    className="p-2.5 rounded-xl hover:bg-slate-700/50 transition-all duration-200 group hidden sm:flex"
-                    title="Video call"
+                    className="telegram-icon-button hidden sm:flex"
+                    title="Voice call"
                 >
-                    <Video className="w-4 h-4 text-slate-400 group-hover:text-cyan-400" />
+                    <Phone className="w-5 h-5" />
                 </button>
 
                 {/* More Options Button */}
                 <button
-                    className="p-2.5 rounded-xl hover:bg-slate-700/50 transition-all duration-200 group"
+                    className="telegram-icon-button"
                     title="More options"
                 >
-                    <MoreVertical className="w-4 h-4 text-slate-400 group-hover:text-cyan-400" />
-                </button>
-
-                {/* Close Button (Desktop) */}
-                <button
-                    onClick={() => setSelectedUser(null)}
-                    className="hidden md:flex items-center justify-center w-9 h-9 rounded-xl hover:bg-slate-700/50 transition-all duration-200 group"
-                    title="Close chat"
-                >
-                    <XIcon className="w-4 h-4 text-slate-400 group-hover:text-red-400" />
+                    <MoreVertical className="w-5 h-5" />
                 </button>
             </div>
         </div>

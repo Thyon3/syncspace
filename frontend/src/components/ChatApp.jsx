@@ -15,7 +15,7 @@ function ChatApp() {
     <div className="h-screen flex bg-telegram-dark overflow-hidden">
       {/* Telegram Desktop Layout - Three Columns */}
       <div className="flex h-full w-full">
-        {/* Left Sidebar - Folders and Navigation (Telegram style) */}
+        {/* Left Sidebar - Folders and Navigation (Telegram style) - Desktop Only */}
         <div className="hidden lg:flex w-80 telegram-sidebar flex-col">
           {/* User Profile Section */}
           <div className="telegram-header">
@@ -123,7 +123,9 @@ function ChatApp() {
         </div>
 
         {/* Middle Column - Chat List */}
-        <div className="w-full lg:w-96 telegram-chat-list flex flex-col">
+        {/* On mobile: show only if no user is selected */}
+        {/* On desktop: always show */}
+        <div className={`${selectedUser ? 'hidden lg:flex' : 'flex'} w-full lg:w-96 telegram-chat-list flex-col`}>
           {/* Chat List Header */}
           <div className="telegram-header">
             <div className="flex items-center gap-3">
@@ -153,7 +155,9 @@ function ChatApp() {
         </div>
 
         {/* Right Column - Chat Area */}
-        <div className="hidden lg:flex flex-1 telegram-chat-area flex-col">
+        {/* On mobile: show only if user is selected */}
+        {/* On desktop: always show */}
+        <div className={`${selectedUser ? 'flex' : 'hidden lg:flex'} flex-1 telegram-chat-area flex-col`}>
           {selectedUser ? (
             <ChatContainer />
           ) : (
