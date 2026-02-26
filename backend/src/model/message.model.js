@@ -68,6 +68,19 @@ const messageSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    reactions: [{
+        userId: {
+            type: mongoose.Types.ObjectId,
+            ref: 'User',
+        },
+        emoji: {
+            type: String,
+        },
+        createdAt: {
+            type: Date,
+            default: Date.now,
+        }
+    }],
 }, { timestamps: true });
 
 const User = mongoose.model('Message', messageSchema);
