@@ -1,4 +1,3 @@
-
 import express, { Router } from 'express';
 import multer from 'multer';
 const router = express.Router();
@@ -6,7 +5,7 @@ const router = express.Router();
 // message controller 
 import {
     getAllContacts, getChatPartners, getMessagesById, messages, sendMessage, markMessageAsRead,
-    getMessagesByChatId, searchMessages, editMessage, deleteMessage
+    getMessagesByChatId, searchMessages, editMessage, deleteMessage, forwardMessage, getUnreadCount, scheduleMessage
 } from '../controllers/message.controller.js';
 import { protectRoute } from '../middleware/auth.middleware.js';
 const upload = multer({ storage: multer.memoryStorage() });
@@ -35,6 +34,12 @@ router.get(
     getMessagesByChatId
 );
 
+router.get(
+    "/chat/:chatId/unread",
+    protectRoute,
+    getUnreadCount
+);
+
 router.post(
     "/send",
     protectRoute,
@@ -53,6 +58,18 @@ router.post(
     "/read",
     protectRoute,
     markMessageAsRead
+);
+
+router.post(
+    "/forward",
+    protectRoute,
+    forwardMessage
+);
+
+router.post(
+    "/schedule",
+    protectRoute,
+    scheduleMessage
 );
 
 router.patch("/:id", protectRoute, editMessage);

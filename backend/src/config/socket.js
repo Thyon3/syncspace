@@ -14,18 +14,19 @@ export const initializeSocket = (httpServer) => {
     io.on('connection', (socket) => {
         console.log('🔌 User connected:', socket.id);
 
-        // Get userId from handshake query
         const userId = socket.handshake.query.userId;
 
         if (userId && userId !== 'undefined') {
             userSocketMap.set(userId, socket.id);
             console.log(`👤 User ${userId} mapped to socket ${socket.id}`);
 
-            // Broadcast online status to all connected clients
+            import('./model/user.model.js').then(({ default: User }) => {
+                User.findByIdAndUpdate(userId, { isOnline: true, lastSeen: new Date() });
+            });
+
             io.emit('getOnlineUsers', Array.from(userSocketMap.keys()));
         }
 
-        // Handle typing events
         socket.on('typing', ({ receiverId, isTyping }) => {
             const receiverSocketId = userSocketMap.get(receiverId);
             if (receiverSocketId) {
@@ -36,7 +37,6 @@ export const initializeSocket = (httpServer) => {
             }
         });
 
-        // Handle message read receipts
         socket.on('messageRead', ({ senderId, messageIds }) => {
             const senderSocketId = userSocketMap.get(senderId);
             if (senderSocketId) {
@@ -47,13 +47,36 @@ export const initializeSocket = (httpServer) => {
             }
         });
 
-        // Handle disconnection
+        socket.on('callUser', ({ to, offer, from }) => {
+            const receiverSocketId = userSocketMap.get(to);
+            if (receiverSocketId) {
+                io.to(receiverSocketId).emit('incomingCall', { from, offer });
+            }
+        });
+
+        socket.on('answerCall', ({ to, answer }) => {
+            const receiverSocketId = userSocketMap.get(to);
+            if (receiverSocketId) {
+                io.to(receiverSocketId).emit('callAnswered', { answer });
+            }
+        });
+
+        socket.on('endCall', ({ to }) => {
+            const receiverSocketId = userSocketMap.get(to);
+            if (receiverSocketId) {
+                io.to(receiverSocketId).emit('callEnded');
+            }
+        });
+
         socket.on('disconnect', () => {
             console.log('🔌 User disconnected:', socket.id);
 
             if (userId && userId !== 'undefined') {
+                import('./model/user.model.js').then(({ default: User }) => {
+                    User.findByIdAndUpdate(userId, { isOnline: false, lastSeen: new Date() });
+                });
+
                 userSocketMap.delete(userId);
-                // Broadcast offline status
                 io.emit('getOnlineUsers', Array.from(userSocketMap.keys()));
             }
         });
