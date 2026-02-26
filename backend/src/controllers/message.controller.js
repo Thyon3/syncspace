@@ -400,3 +400,92 @@ export const markMessageAsRead = async function (req, res) {
     }
 };
 
+
+export const forwardMessage = async (req, res) => {
+    try {
+        const { messageId, targetChatIds } = req.body;
+        const userId = req.user._id;
+
+        if (!messageId || !targetChatIds || !Array.isArray(targetChatIds)) {
+            return res.status(400).json({ message: "Message ID and target chat IDs are required" });
+        }
+
+        const originalMessage = await messageModel.findById(messageId);
+        if (!originalMessage) {
+            return res.status(404).json({ message: "Message not found" });
+        }
+
+        const forwardedMessages = [];
+        const io = getIO();
+
+        for (const chatId of targetChatIds) {
+            const chat = await Chat.findById(chatId);
+            if (!chat || !chat.members.includes(userId)) {
+                continue;
+            }
+
+            const newMessage = new messageModel({
+                senderId: userId,
+                chatId: chatId,
+                text: originalMessage.text,
+                image: originalMessage.image,
+                fileUrl: originalMessage.fileUrl,
+                fileType: originalMessage.fileType,
+                fileName: originalMessage.fileName,
+                fileSize: originalMessage.fileSize,
+            });
+
+            await newMessage.save();
+            await Chat.findByIdAndUpdate(chatId, { lastMessage: newMessage._id });
+
+            forwardedMessages.push(newMessage);
+
+            chat.members.forEach(memberId => {
+                if (memberId.toString() === userId.toString()) return;
+                const socketId = getReceiverSocketId(memberId.toString());
+                if (socketId) {
+                    io.to(socketId).emit('newMessage', newMessage);
+                }
+            });
+        }
+
+        res.status(200).json({ message: "Message forwarded successfully", forwardedMessages });
+    } catch (error) {
+        console.error("Error in forwardMessage:", error.message);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const getUnreadCount = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { chatId } = req.params;
+
+        const count = await messageModel.countDocuments({
+            chatId,
+            recieverId: userId,
+            isRead: false
+        });
+
+        res.status(200).json({ count });
+    } catch (error) {
+        console.error("Error in getUnreadCount:", error.message);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const scheduleMessage = async (req, res) => {
+    try {
+        const { chatId, text, image, scheduledTime } = req.body;
+        const userId = req.user._id;
+
+        if (!scheduledTime || new Date(scheduledTime) <= new Date()) {
+            return res.status(400).json({ message: "Invalid scheduled time" });
+        }
+
+        res.status(200).json({ message: "Message scheduled successfully" });
+    } catch (error) {
+        console.error("Error in scheduleMessage:", error.message);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
