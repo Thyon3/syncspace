@@ -36,6 +36,10 @@ import authrouter from "./routers/auth.route.js";
 import messageRouter from './routers/message.route.js';
 import userRouter from './routers/user.route.js';
 import chatRouter from './routers/chat.route.js';
+import reactionRouter from './routers/reaction.route.js';
+import pinRouter from './routers/pin.route.js';
+import blockRouter from './routers/block.route.js';
+import privacyRouter from './routers/privacy.route.js';
 
 // Port
 const port = ENV.PORT || 3000;
@@ -46,6 +50,10 @@ app.use("/api/auth", authrouter);
 app.use("/api/messages", messageRouter);
 app.use("/api/user", userRouter);
 app.use("/api/chats", chatRouter);
+app.use("/api/reactions", reactionRouter);
+app.use("/api/pins", pinRouter);
+app.use("/api/users", blockRouter);
+app.use("/api/privacy", privacyRouter);
 
 // Example route
 app.get("/fuck", (req, res) => {
