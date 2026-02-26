@@ -27,6 +27,44 @@ const chatSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Message',
     },
+    pinnedMessages: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Message',
+    }],
+    groupDescription: {
+        type: String,
+        maxlength: 500,
+    },
+    moderators: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+    }],
+    mutedBy: [{
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+        },
+        mutedUntil: {
+            type: Date,
+        }
+    }],
+    archivedBy: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+    }],
+    draftMessages: [{
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+        },
+        text: {
+            type: String,
+        },
+        updatedAt: {
+            type: Date,
+            default: Date.now,
+        }
+    }],
 }, { timestamps: true });
 
 const Chat = mongoose.model('Chat', chatSchema);
