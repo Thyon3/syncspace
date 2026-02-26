@@ -23,6 +23,40 @@ const userSchema = new mongoose.Schema({
     },
     profilePicPublicId: {
         type: String, required: false
+    },
+    bio: {
+        type: String,
+        maxlength: 150,
+        default: '',
+    },
+    lastSeen: {
+        type: Date,
+        default: Date.now,
+    },
+    isOnline: {
+        type: Boolean,
+        default: false,
+    },
+    blockedUsers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+    }],
+    privacySettings: {
+        lastSeen: {
+            type: String,
+            enum: ['everyone', 'contacts', 'nobody'],
+            default: 'everyone',
+        },
+        profilePic: {
+            type: String,
+            enum: ['everyone', 'contacts', 'nobody'],
+            default: 'everyone',
+        },
+        about: {
+            type: String,
+            enum: ['everyone', 'contacts', 'nobody'],
+            default: 'everyone',
+        },
     }
 }, {
     timestamps: true,
