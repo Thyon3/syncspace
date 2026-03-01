@@ -9,16 +9,16 @@ export const userAuthStore = create((set, get) => ({
     isCheckingAuth: true,
     isSigningUp: false,
     isLoggingIn: false,
+    isUpdatingProfile: false,
 
     signUp: async (data) => {
         set({ isSigningUp: true });
         try {
             const res = await axiosInstance.post("/auth/signUp", data);
             set({ authUser: res.data });
-            console.log(authUser);
-            toast.success('Account created Succesfully');
+            toast.success('Account created successfully');
         } catch (error) {
-            toast.error(error.response.data.message);
+            toast.error(error.response?.data?.message || "Sign up failed");
         }
         finally {
             set({ isSigningUp: false });
@@ -26,29 +26,66 @@ export const userAuthStore = create((set, get) => ({
     },
     logout: async () => {
         try {
-            const res = await axiosInstance.post("/auth/logout");
+            await axiosInstance.post("/auth/logout");
             set({ authUser: null });
-            toast.success("logged out successfully");
+            toast.success("Logged out successfully");
         } catch (error) {
             console.error(error);
-            toast.error('failed to logou');
+            toast.error('Failed to logout');
         }
-    }
-
-    ,
+    },
     login: async (data) => {
         set({ isLoggingIn: true });
         try {
             const res = await axiosInstance.post("/auth/login", data);
             set({ authUser: res.data });
-            console.log(authUser);
-            console.log(authUser.name);
-            toast.success('Logged in Succesfully');
+            toast.success('Logged in successfully');
         } catch (error) {
-            toast.error(error.response.data.message);
+            toast.error(error.response?.data?.message || "Login failed");
         }
         finally {
             set({ isLoggingIn: false });
+        }
+    },
+    updateProfile: async (data) => {
+        set({ isUpdatingProfile: true });
+        try {
+            // Use FormData for profile pic
+            const formData = new FormData();
+            if (data.name) formData.append("name", data.name);
+            if (data.bio !== undefined) formData.append("bio", data.bio);
+            if (data.profilePic) formData.append("profilePic", data.profilePic);
+
+            const res = await axiosInstance.put("/user/updateProfile", formData);
+            if (res.data.success) {
+                set({ authUser: res.data.user });
+                toast.success("Profile updated successfully");
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to update profile");
+        } finally {
+            set({ isUpdatingProfile: false });
+        }
+    },
+    changePassword: async (data) => {
+        try {
+            const res = await axiosInstance.post("/user/change-password", data);
+            toast.success(res.data.message);
+            return true;
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to change password");
+            return false;
+        }
+    },
+    deleteAccount: async () => {
+        try {
+            const res = await axiosInstance.delete("/user/delete-account");
+            set({ authUser: null });
+            toast.success(res.data.message);
+            return true;
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to delete account");
+            return false;
         }
     },
     checkAuth: async () => {
@@ -57,10 +94,8 @@ export const userAuthStore = create((set, get) => ({
             set({
                 authUser: res.data.user
             });
-
-
         } catch (error) {
-            console.log('Error in authCkeck ', error);
+            console.log('Error in authCheck ', error);
             set({
                 authUser: null
             })
@@ -70,4 +105,4 @@ export const userAuthStore = create((set, get) => ({
             })
         }
     }
-})); 
+}));
