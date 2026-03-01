@@ -383,3 +383,88 @@ export const getDraft = async (req, res) => {
         return res.status(500).json({ message: error.message });
     }
 };
+export const pinMessage = async (req, res) => {
+    try {
+        const { chatId, messageId } = req.body;
+        const userId = req.user._id;
+
+        const chat = await Chat.findById(chatId);
+        if (!chat) return res.status(404).json({ message: "Chat not found" });
+
+        // Only admin or moderators can pin
+        const isAdmin = chat.admin && chat.admin.toString() === userId.toString();
+        const isModerator = chat.moderators && chat.moderators.some(m => m.toString() === userId.toString());
+
+        if (!isAdmin && !isModerator) {
+            return res.status(403).json({ message: "Only admin and moderators can pin messages" });
+        }
+
+        if (chat.pinnedMessages.includes(messageId)) {
+            return res.status(400).json({ message: "Message already pinned" });
+        }
+
+        chat.pinnedMessages.push(messageId);
+        await chat.save();
+
+        const populatedChat = await Chat.findById(chatId)
+            .populate('pinnedMessages')
+            .populate('members', '-password')
+            .populate('admin', 'name profilePic');
+
+        // Socket emit
+        const io = getIO();
+        chat.members.forEach(memberId => {
+            const socketId = getReceiverSocketId(memberId.toString());
+            if (socketId) {
+                io.to(socketId).emit('chatPinnedUpdated', populatedChat);
+            }
+        });
+
+        return res.json(populatedChat);
+
+    } catch (error) {
+        console.error("Error in pinMessage:", error);
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+export const unpinMessage = async (req, res) => {
+    try {
+        const { chatId, messageId } = req.body;
+        const userId = req.user._id;
+
+        const chat = await Chat.findById(chatId);
+        if (!chat) return res.status(404).json({ message: "Chat not found" });
+
+        // Only admin or moderators can unpin
+        const isAdmin = chat.admin && chat.admin.toString() === userId.toString();
+        const isModerator = chat.moderators && chat.moderators.some(m => m.toString() === userId.toString());
+
+        if (!isAdmin && !isModerator) {
+            return res.status(403).json({ message: "Only admin and moderators can unpin messages" });
+        }
+
+        chat.pinnedMessages = chat.pinnedMessages.filter(id => id.toString() !== messageId.toString());
+        await chat.save();
+
+        const populatedChat = await Chat.findById(chatId)
+            .populate('pinnedMessages')
+            .populate('members', '-password')
+            .populate('admin', 'name profilePic');
+
+        // Socket emit
+        const io = getIO();
+        chat.members.forEach(memberId => {
+            const socketId = getReceiverSocketId(memberId.toString());
+            if (socketId) {
+                io.to(socketId).emit('chatPinnedUpdated', populatedChat);
+            }
+        });
+
+        return res.json(populatedChat);
+
+    } catch (error) {
+        console.error("Error in unpinMessage:", error);
+        return res.status(500).json({ message: error.message });
+    }
+};
