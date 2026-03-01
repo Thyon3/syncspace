@@ -2,10 +2,10 @@ import express, { Router } from 'express';
 import multer from 'multer';
 const router = express.Router();
 
-// message controller 
 import {
     getAllContacts, getChatPartners, getMessagesById, messages, sendMessage, markMessageAsRead,
-    getMessagesByChatId, searchMessages, editMessage, deleteMessage, forwardMessage, getUnreadCount, scheduleMessage
+    getMessagesByChatId, searchMessages, editMessage, deleteMessage, forwardMessage, getUnreadCount, scheduleMessage,
+    toggleReaction
 } from '../controllers/message.controller.js';
 import { protectRoute } from '../middleware/auth.middleware.js';
 const upload = multer({ storage: multer.memoryStorage() });
@@ -70,6 +70,12 @@ router.post(
     "/schedule",
     protectRoute,
     scheduleMessage
+);
+
+router.post(
+    "/reaction",
+    protectRoute,
+    toggleReaction
 );
 
 router.patch("/:id", protectRoute, editMessage);
