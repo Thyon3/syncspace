@@ -138,6 +138,21 @@ export const useChatStore = create((set, get) => ({
             console.log('✅ Messages marked as read by', readBy);
         });
 
+        // Listen for pinned messages updates
+        socket.on('chatPinnedUpdated', (updatedChat) => {
+            const { selectedChat, chats } = get();
+
+            // Update the chats list
+            set({
+                chats: chats.map(c => c._id === updatedChat._id ? updatedChat : c)
+            });
+
+            // Update selected chat if it's the one that was updated
+            if (selectedChat?._id === updatedChat._id) {
+                set({ selectedChat: updatedChat });
+            }
+        });
+
         // Listen for online users
         socket.on('getOnlineUsers', (userIds) => {
             set({ onlineUsers: userIds });
@@ -154,6 +169,7 @@ export const useChatStore = create((set, get) => ({
         socket.off('messageReaction');
         socket.off('messageEdited');
         socket.off('messageDeleted');
+        socket.off('chatPinnedUpdated');
         console.log('📭 Unsubscribed from messages');
     },
 
@@ -333,6 +349,26 @@ export const useChatStore = create((set, get) => ({
         } catch (error) {
             console.error("Error toggling reaction:", error);
             // No toast for reactions usually, or a subtle one
+        }
+    },
+
+    pinMessage: async (chatId, messageId) => {
+        try {
+            const res = await axiosInstance.post('/chats/pin', { chatId, messageId });
+            set({ selectedChat: res.data });
+            toast.success("Message pinned");
+        } catch (error) {
+            toast.error(error.response?.data?.message ?? "Failed to pin message");
+        }
+    },
+
+    unpinMessage: async (chatId, messageId) => {
+        try {
+            const res = await axiosInstance.post('/chats/unpin', { chatId, messageId });
+            set({ selectedChat: res.data });
+            toast.success("Message unpinned");
+        } catch (error) {
+            toast.error(error.response?.data?.message ?? "Failed to unpin message");
         }
     },
 
