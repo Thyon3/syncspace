@@ -26,9 +26,13 @@ const userSchema = new mongoose.Schema({
     },
     bio: {
         type: String,
-        maxlength: 150,
-        default: '',
+        maxLength: 70,
+        default: ""
     },
+    blockedUsers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
     lastSeen: {
         type: Date,
         default: Date.now,
@@ -37,10 +41,6 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
-    blockedUsers: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-    }],
     privacySettings: {
         lastSeen: {
             type: String,
