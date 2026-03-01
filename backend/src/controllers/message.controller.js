@@ -489,3 +489,54 @@ export const scheduleMessage = async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
     }
 };
+export const toggleReaction = async (req, res) => {
+    try {
+        const { messageId, emoji } = req.body;
+        const userId = req.user._id;
+
+        const message = await messageModel.findById(messageId);
+        if (!message) return res.status(404).json({ message: "Message not found" });
+
+        const existingReactionIndex = message.reactions.findIndex(
+            r => r.userId.toString() === userId.toString() && r.emoji === emoji
+        );
+
+        if (existingReactionIndex > -1) {
+            // Remove reaction if already exists
+            message.reactions.splice(existingReactionIndex, 1);
+        } else {
+            // Add new reaction
+            message.reactions.push({ userId, emoji });
+        }
+
+        await message.save();
+
+        const updatedMessage = await messageModel.findById(messageId)
+            .populate('senderId', 'name profilePic')
+            .populate({
+                path: 'replyTo',
+                populate: { path: 'senderId', select: 'name profilePic' }
+            });
+
+        // Emit socket event to chat members 
+        const io = getIO();
+        const chat = await Chat.findById(message.chatId);
+        if (chat) {
+            chat.members.forEach(memberId => {
+                const socketId = getReceiverSocketId(memberId.toString());
+                if (socketId) {
+                    io.to(socketId).emit('messageReaction', {
+                        messageId,
+                        reactions: updatedMessage.reactions,
+                        chatId: message.chatId
+                    });
+                }
+            });
+        }
+
+        res.status(200).json(updatedMessage);
+    } catch (error) {
+        console.error("Error in toggleReaction:", error.message);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
