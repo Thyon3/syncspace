@@ -113,6 +113,14 @@ export const useChatStore = create((set, get) => ({
             });
         });
 
+        // Listen for message reactions
+        socket.on('messageReaction', ({ messageId, reactions }) => {
+            const { messages } = get();
+            set({
+                messages: messages.map(m => m._id === messageId ? { ...m, reactions } : m)
+            });
+        });
+
         console.log('📨 Subscribed to messages');
 
         // Listen for read receipts
@@ -143,6 +151,9 @@ export const useChatStore = create((set, get) => ({
         socket.off('newMessage');
         socket.off('messagesRead');
         socket.off('getOnlineUsers');
+        socket.off('messageReaction');
+        socket.off('messageEdited');
+        socket.off('messageDeleted');
         console.log('📭 Unsubscribed from messages');
     },
 
@@ -309,6 +320,19 @@ export const useChatStore = create((set, get) => ({
             toast.success("Message deleted");
         } catch (error) {
             toast.error(error.response?.data?.message ?? "Failed to delete message");
+        }
+    },
+
+    toggleReaction: async (messageId, emoji) => {
+        try {
+            const res = await axiosInstance.post('/messages/reaction', { messageId, emoji });
+            const { messages } = get();
+            set({
+                messages: messages.map(m => m._id === messageId ? res.data : m)
+            });
+        } catch (error) {
+            console.error("Error toggling reaction:", error);
+            // No toast for reactions usually, or a subtle one
         }
     },
 
