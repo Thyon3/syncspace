@@ -1,9 +1,9 @@
 import express from 'express';
 import { protectRoute } from '../middleware/auth.middleware.js';
-import { 
-    getChats, 
-    createGroup, 
-    addMember, 
+import {
+    getChats,
+    createGroup,
+    addMember,
     searchUsersAndGroups,
     removeMember,
     leaveGroup,
@@ -15,7 +15,9 @@ import {
     promoteModerator,
     demoteModerator,
     saveDraft,
-    getDraft
+    getDraft,
+    pinMessage,
+    unpinMessage
 } from '../controllers/chat.controller.js';
 
 const router = express.Router();
@@ -34,6 +36,8 @@ router.post('/promote-moderator', protectRoute, promoteModerator);
 router.post('/demote-moderator', protectRoute, demoteModerator);
 router.post('/draft', protectRoute, saveDraft);
 router.get('/:chatId/draft', protectRoute, getDraft);
+router.post('/pin', protectRoute, pinMessage);
+router.post('/unpin', protectRoute, unpinMessage);
 router.get('/search', protectRoute, searchUsersAndGroups);
 
 export default router;
