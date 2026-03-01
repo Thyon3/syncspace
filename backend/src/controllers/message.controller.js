@@ -35,6 +35,7 @@ export const searchMessages = async (req, res) => {
         const messages = await messageModel.find(searchQuery)
             .populate('senderId', 'name profilePic')
             .populate('chatId', 'groupName type')
+            .populate('forwardFrom', 'name profilePic')
             .sort({ createdAt: -1 })
             .limit(50);
 
@@ -69,7 +70,8 @@ export const editMessage = async (req, res) => {
             .populate({
                 path: 'replyTo',
                 populate: { path: 'senderId', select: 'name profilePic' }
-            });
+            })
+            .populate('forwardFrom', 'name profilePic');
 
         // Emit socket event
         const io = getIO();
@@ -316,6 +318,7 @@ export const getMessagesByChatId = async function (req, res) {
                 path: 'replyTo',
                 populate: { path: 'senderId', select: 'name profilePic' }
             })
+            .populate('forwardFrom', 'name profilePic')
             .sort({ createdAt: 1 });
         return res.json(messages);
 
@@ -326,7 +329,7 @@ export const getMessagesByChatId = async function (req, res) {
 };
 export const messages = async function (req, res) {
     try {
-        const messages = await messageModel.find();
+        const messages = await messageModel.find().populate('forwardFrom', 'name profilePic');
         return res.json(messages);
     } catch (error) {
         return res.status(500).json({
@@ -350,7 +353,7 @@ export const getMessagesById = async function (req, res) {
                 { recieverId: id, senderId: chatPartnerId },
                 { senderId: id, recieverId: chatPartnerId },
             ],
-        }).sort({ createdAt: 1 });
+        }).populate('forwardFrom', 'name profilePic').sort({ createdAt: 1 });
 
         // return empty array instead of 404
         return res.json(messages);
