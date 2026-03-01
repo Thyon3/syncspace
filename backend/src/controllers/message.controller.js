@@ -193,7 +193,7 @@ export const sendMessage = async function (req, res) {
         const senderId = req.user._id;
         // recieverId might come from params (1:1) or body (potentially)
         // chatId comes from body for groups
-        const { text, image, fileUrl, fileType, fileName, fileSize, chatId, replyTo } = req.body;
+        const { text, image, fileUrl, fileType, fileName, fileSize, chatId, replyTo, isSilent } = req.body;
         const recieverId = req.params.userId; // Optional if chatId is provided
 
         let targetChatId = chatId;
@@ -251,6 +251,7 @@ export const sendMessage = async function (req, res) {
             fileName,
             fileSize,
             replyTo: replyTo || null,
+            isSilent: isSilent === 'true' || isSilent === true,
         });
 
         await newMessage.save();
