@@ -7,10 +7,10 @@ import {
     Paperclip,
     X,
     Mic,
-    Mic,
     Image as ImageIcon,
     Sticker,
-    Check
+    Check,
+    BellOff
 } from "lucide-react";
 
 function MessageInput() {
@@ -20,9 +20,10 @@ function MessageInput() {
     const [file, setFile] = useState(null); // Generic file
     const [isDragging, setIsDragging] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
+    const [showSendMenu, setShowSendMenu] = useState(false);
+    const [sendMenuPos, setSendMenuPos] = useState({ x: 0, y: 0 });
 
     const fileInputRef = useRef(null);
-    const imageInputRef = useRef(null);
     const textareaRef = useRef(null);
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
@@ -31,6 +32,7 @@ function MessageInput() {
         sendMessage,
         isSendinMessageLoading,
         selectedUser,
+        selectedChat,
         emitTyping,
         replyingTo,
         editingMessage,
@@ -82,8 +84,8 @@ function MessageInput() {
         }
     };
 
-    const handleSendMessage = async (e) => {
-        e.preventDefault();
+    const handleSendMessage = async (e, options = {}) => {
+        if (e) e.preventDefault();
 
         if (!text.trim() && !image && !file) return;
 
@@ -99,6 +101,7 @@ function MessageInput() {
                     fileName: file?.name,
                     fileSize: file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : null,
                     receiverId: selectedUser?._id,
+                    isSilent: options.isSilent || false,
                 });
             }
 
@@ -122,6 +125,21 @@ function MessageInput() {
         }
     };
 
+    const handleSendContextMenu = (e) => {
+        e.preventDefault();
+        if (!text.trim() && !image && !file) return;
+
+        // Show menu above the send button
+        const rect = e.currentTarget.getBoundingClientRect();
+        setSendMenuPos({ x: rect.left, y: rect.top });
+        setShowSendMenu(true);
+    };
+
+    const sendSilently = (e) => {
+        handleSendMessage(e, { isSilent: true });
+        setShowSendMenu(false);
+    };
+
     const handleImageUpload = (file) => {
         if (!file) return;
 
@@ -141,21 +159,17 @@ function MessageInput() {
     const handleFileUpload = (selectedFile) => {
         if (!selectedFile) return;
 
-        // If it's an image, default to image handler for preview
         if (selectedFile.type.startsWith('image/')) {
             handleImageUpload(selectedFile);
             return;
         }
 
-        // 10MB limit
         if (selectedFile.size > 10 * 1024 * 1024) {
             toast.error("File size should be less than 10MB");
             return;
         }
 
-        setFile(selectedFile); // Store raw file object for now
-        // Note: For real file implementation without base64 for large files, 
-        // we'd need a separate upload endpoint or FormData in store.
+        setFile(selectedFile);
     };
 
     const handleDragOver = (e) => {
@@ -225,7 +239,7 @@ function MessageInput() {
     };
 
     const handleSendVoice = async (audioFile) => {
-        if (!selectedUser || !audioFile) return;
+        if (!(selectedUser || selectedChat) || !audioFile) return;
 
         try {
             await sendMessage({
@@ -233,7 +247,6 @@ function MessageInput() {
                 fileType: 'audio',
                 fileName: 'Voice Message',
                 fileSize: `${(audioFile.size / 1024).toFixed(2)} KB`,
-                receiverId: selectedUser._id,
             });
         } catch (error) {
             toast.error("Failed to send voice message");
@@ -249,7 +262,7 @@ function MessageInput() {
     };
 
     return (
-        <div className="border-t border-telegram-sidebar bg-telegram-sidebar">
+        <div className="border-t border-telegram-sidebar bg-telegram-sidebar relative">
             {/* Reply / Edit Preview */}
             {(replyingTo || editingMessage) && (
                 <div className="px-4 py-2 border-b border-telegram-sidebar bg-telegram-hover/30 flex items-center gap-3 animate-in slide-in-from-bottom-2">
@@ -314,10 +327,7 @@ function MessageInput() {
             {/* Input Area */}
             <form
                 onSubmit={handleSendMessage}
-                className={`p-3 ${isDragging
-                    ? 'bg-telegram-hover'
-                    : ''
-                    } transition-colors duration-200`}
+                className={`p-3 ${isDragging ? 'bg-telegram-hover' : ''} transition-colors duration-200`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
@@ -351,7 +361,6 @@ function MessageInput() {
                                 onKeyPress={handleKeyPress}
                                 rows={1}
                                 className="telegram-input w-full resize-none min-h-[40px] max-h-[120px] py-2 px-3 pr-10"
-                                style={{ fieldSizing: 'content' }}
                             />
 
                             {/* Emoji Button */}
@@ -367,24 +376,22 @@ function MessageInput() {
 
                     {/* Action Buttons */}
                     <div className="flex items-center gap-1">
-                        {/* Voice/Mic Button */}
                         {!text.trim() && !image && !file ? (
                             <button
                                 type="button"
                                 onClick={handleVoiceRecord}
-                                className={`telegram-icon-button p-2 ${isRecording ? 'text-red-500' : ''
-                                    }`}
+                                className={`telegram-icon-button p-2 ${isRecording ? 'text-red-500' : ''}`}
                                 title={isRecording ? "Stop recording" : "Record voice"}
                             >
                                 <Mic className="w-5 h-5" />
                             </button>
                         ) : (
-                            // Send Button
                             <button
                                 type="submit"
                                 disabled={isSendinMessageLoading || (!text.trim() && !image && !file)}
                                 className="telegram-button p-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                title="Send message"
+                                title="Send message (Right click for options)"
+                                onContextMenu={handleSendContextMenu}
                             >
                                 {isSendinMessageLoading ? (
                                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -395,6 +402,32 @@ function MessageInput() {
                         )}
                     </div>
                 </div>
+
+                {/* Send Options Menu */}
+                {showSendMenu && (
+                    <>
+                        <div
+                            className="fixed inset-0 z-40"
+                            onClick={() => setShowSendMenu(false)}
+                        />
+                        <div
+                            className="absolute z-50 bg-slate-800 border border-slate-700 rounded-lg shadow-xl overflow-hidden min-w-[160px] animate-in slide-in-from-bottom-2"
+                            style={{
+                                left: `${sendMenuPos.x - 140}px`,
+                                top: `${sendMenuPos.y - 70}px`
+                            }}
+                        >
+                            <button
+                                type="button"
+                                onClick={sendSilently}
+                                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-700 text-sm text-slate-200 transition-colors"
+                            >
+                                <BellOff className="w-4 h-4 text-slate-400" />
+                                Send Silently
+                            </button>
+                        </div>
+                    </>
+                )}
 
                 {/* Drag Overlay */}
                 {isDragging && (
@@ -407,22 +440,20 @@ function MessageInput() {
                 )}
             </form>
 
-            {/* Hidden File Input */}
             <input
                 ref={fileInputRef}
                 type="file"
-                // accept="*" // Allow all files
                 onChange={handleFileSelect}
                 className="hidden"
             />
 
             {/* Quick Actions Bar */}
-            <div className="px-4 py-2 border-t border-telegram-sidebar flex items-center gap-4">
+            <div className="px-4 py-1.5 border-t border-telegram-sidebar flex items-center gap-4">
                 <button className="telegram-icon-button p-1" title="Stickers">
                     <Sticker className="w-4 h-4" />
                 </button>
                 <button className="telegram-icon-button p-1" title="GIFs">
-                    <span className="text-xs font-bold text-slate-400">GIF</span>
+                    <span className="text-[10px] font-bold text-slate-400 border border-slate-500 px-0.5 rounded leading-none">GIF</span>
                 </button>
                 <button className="telegram-icon-button p-1" title="Commands">
                     <span className="text-xs font-bold text-slate-400">/</span>
