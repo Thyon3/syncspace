@@ -388,6 +388,7 @@ export const useChatStore = create((set, get) => ({
             if (messageData.fileName) formData.append("fileName", messageData.fileName);
             if (messageData.fileSize) formData.append("fileSize", messageData.fileSize);
             if (replyingTo) formData.append("replyTo", replyingTo._id);
+            if (messageData.isSilent) formData.append("isSilent", messageData.isSilent);
 
             // Add chatId if selectedChat is present
             if (selectedChat) {
@@ -406,6 +407,7 @@ export const useChatStore = create((set, get) => ({
                 fileName: messageData.fileName,
                 fileSize: messageData.fileSize,
                 replyTo: replyingTo,
+                isSilent: messageData.isSilent,
                 createdAt: new Date().toISOString(),
                 isOptimistic: true
             };
