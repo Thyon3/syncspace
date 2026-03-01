@@ -85,6 +85,11 @@ const messageSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    forwardFrom: {
+        type: mongoose.Types.ObjectId,
+        ref: 'User',
+        required: false,
+    },
 }, { timestamps: true });
 
 const User = mongoose.model('Message', messageSchema);

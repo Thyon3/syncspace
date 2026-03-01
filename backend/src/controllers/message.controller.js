@@ -404,7 +404,7 @@ export const markMessageAsRead = async function (req, res) {
 
 export const forwardMessage = async (req, res) => {
     try {
-        const { messageId, targetChatIds } = req.body;
+        const { messageId, targetChatIds, hideSender } = req.body;
         const userId = req.user._id;
 
         if (!messageId || !targetChatIds || !Array.isArray(targetChatIds)) {
@@ -434,6 +434,7 @@ export const forwardMessage = async (req, res) => {
                 fileType: originalMessage.fileType,
                 fileName: originalMessage.fileName,
                 fileSize: originalMessage.fileSize,
+                forwardFrom: hideSender ? null : (originalMessage.forwardFrom || originalMessage.senderId)
             });
 
             await newMessage.save();
