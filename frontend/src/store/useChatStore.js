@@ -542,4 +542,36 @@ export const useChatStore = create((set, get) => ({
         }
     },
 
+    toggleArchive: async (chatId) => {
+        try {
+            const res = await axiosInstance.post("/chats/archive", { chatId });
+            const { chats, selectedChat } = get();
+            const updatedChat = res.data.chat;
+
+            set({
+                chats: chats.map(c => c._id === chatId ? updatedChat : c),
+                selectedChat: selectedChat?._id === chatId ? updatedChat : selectedChat
+            });
+            toast.success(res.data.message);
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to archive/unarchive chat");
+        }
+    },
+
+    toggleMute: async (chatId, muteUntil = null) => {
+        try {
+            const res = await axiosInstance.post("/chats/mute", { chatId, muteUntil });
+            const { chats, selectedChat } = get();
+            const updatedChat = res.data.chat;
+
+            set({
+                chats: chats.map(c => c._id === chatId ? updatedChat : c),
+                selectedChat: selectedChat?._id === chatId ? updatedChat : selectedChat
+            });
+            toast.success(res.data.message);
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to mute/unmute chat");
+        }
+    },
+
 })); 
