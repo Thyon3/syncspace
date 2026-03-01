@@ -1,4 +1,4 @@
-import { FileText, Download, Play, Pause, Reply, Edit, Trash2 } from 'lucide-react';
+import { FileText, Download, Play, Pause, Reply, Edit, Trash2, Pin } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { useChatStore } from '../store/useChatStore';
 import { userAuthStore } from '../store/userAuthStore';
@@ -6,8 +6,12 @@ import { formatMessageTime } from '../lib/utils';
 import ReactionPicker from './ReactionPicker';
 
 function MessageBubble({ message, isOwnMessage }) {
-    const { selectedChat, setReplyingTo, setEditingMessage, deleteMessage, toggleReaction } = useChatStore();
+    const { selectedChat, setReplyingTo, setEditingMessage, deleteMessage, toggleReaction, pinMessage } = useChatStore();
     const { authUser } = userAuthStore();
+
+    const isAdmin = selectedChat?.admin === authUser?._id || selectedChat?.admin?._id === authUser?._id;
+    const isModerator = selectedChat?.moderators?.some(m => m === authUser?._id || m?._id === authUser?._id);
+    const canPin = selectedChat?.type === 'group' && (isAdmin || isModerator);
     const isGroup = selectedChat?.type === 'group';
     const bubbleClass = isOwnMessage
         ? 'telegram-message-bubble-sent ml-auto'
@@ -215,6 +219,15 @@ function MessageBubble({ message, isOwnMessage }) {
                 >
                     <Reply className="w-4 h-4" />
                 </button>
+                {canPin && (
+                    <button
+                        onClick={() => pinMessage(selectedChat._id, message._id)}
+                        className="p-1.5 bg-telegram-sidebar rounded-full hover:bg-slate-700 text-slate-400 hover:text-blue-400 transition-all shadow-lg"
+                        title="Pin Message"
+                    >
+                        <Pin className="w-4 h-4" />
+                    </button>
+                )}
                 {isOwnMessage && (
                     <>
                         <button

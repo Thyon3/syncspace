@@ -7,6 +7,7 @@ import NoSelectedUserPlaceHolder from "./NoSelectedUserPlaceHolder";
 import NoChatHistoryPlaceHolder from "./NoChatHistoryPlaceHolder";
 import MessagesLoadingSkeleton from "./messagesLoadingSkeleton";
 import TypingIndicator from "./TypingIndicator";
+import PinnedMessages from "./PinnedMessages";
 import { Check, CheckCheck } from "lucide-react";
 
 function ChatContainer() {
@@ -22,6 +23,7 @@ function ChatContainer() {
         listenForTyping,
         stopListeningForTyping,
         markMessagesAsRead,
+        unpinMessage
     } = useChatStore();
 
     const { authUser } = userAuthStore();
@@ -115,6 +117,22 @@ function ChatContainer() {
         <div className="flex flex-col h-full bg-telegram-dark">
             {/* Chat Header */}
             <ChatHeader />
+
+            {/* Pinned Messages Header */}
+            {selectedChat?.pinnedMessages?.length > 0 && (
+                <PinnedMessages
+                    pinnedMessages={selectedChat.pinnedMessages}
+                    onUnpin={(msgId) => unpinMessage(selectedChat._id, msgId)}
+                    onNavigate={(msgId) => {
+                        const el = document.getElementById(`msg-${msgId}`);
+                        if (el) {
+                            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            el.classList.add('bg-telegram-blue/10');
+                            setTimeout(() => el.classList.remove('bg-telegram-blue/10'), 2000);
+                        }
+                    }}
+                />
+            )}
 
             {/* Messages Area */}
             <div className="flex-1 overflow-y-auto bg-telegram-dark">
