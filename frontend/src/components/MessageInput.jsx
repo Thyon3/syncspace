@@ -285,7 +285,7 @@ function MessageInput() {
     };
 
     return (
-        <div className="border-t border-telegram-sidebar bg-telegram-sidebar relative">
+        <div className="border-t border-white/5 bg-telegram-sidebar glass-dark relative">
             {/* Reply / Edit Preview */}
             {(replyingTo || editingMessage) && (
                 <div className="px-4 py-2 border-b border-telegram-sidebar bg-telegram-hover/30 flex items-center gap-3 animate-in slide-in-from-bottom-2">

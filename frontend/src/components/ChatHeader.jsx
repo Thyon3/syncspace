@@ -36,7 +36,7 @@ function ChatHeader() {
     };
 
     return (
-        <div className="telegram-header flex items-center justify-between">
+        <div className="telegram-header glass border-b border-white/5 flex items-center justify-between">
             {/* Left Section */}
             <div className="flex items-center gap-3 flex-1 min-w-0">
                 {/* Back Button (Mobile) */}

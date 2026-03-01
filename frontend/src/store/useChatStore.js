@@ -9,6 +9,10 @@ export const useChatStore = create((set, get) => ({
     allContacts: [],
     chats: [],
     messages: [],
+    hasMoreMessages: {}, // chatId -> boolean
+    isMessagesLoading: false,
+    isLoadingMore: false,
+    isUsersLoading: false,
     onlineUsers: [],
     activeTab: "chats",
     isUserLoading: false,
@@ -257,6 +261,57 @@ export const useChatStore = create((set, get) => ({
             toast.error(error.response?.data?.message ?? 'something went wrong');
         } finally {
             set({ isMessageLoading: false });
+        }
+    },
+
+    getMessages: async (chatId) => {
+        set({ isMessagesLoading: true });
+        try {
+            const res = await axiosInstance.get(`/messages/chat/${chatId}`);
+            set({
+                messages: res.data,
+                hasMoreMessages: {
+                    ...get().hasMoreMessages,
+                    [chatId]: res.data.length >= 50 // Assume 50 is the limit
+                }
+            });
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to load messages");
+        } finally {
+            set({ isMessagesLoading: false });
+        }
+    },
+    loadMoreMessages: async (chatId) => {
+        const { messages, isLoadingMore, hasMoreMessages } = get();
+        if (isLoadingMore || !hasMoreMessages[chatId] || messages.length === 0) return;
+
+        set({ isLoadingMore: true });
+        try {
+            const firstMessage = messages[0];
+            const before = firstMessage.createdAt;
+
+            const res = await axiosInstance.get(`/messages/chat/${chatId}?before=${before}&limit=50`);
+
+            if (res.data.length > 0) {
+                set({
+                    messages: [...res.data, ...messages],
+                    hasMoreMessages: {
+                        ...hasMoreMessages,
+                        [chatId]: res.data.length >= 50
+                    }
+                });
+            } else {
+                set({
+                    hasMoreMessages: {
+                        ...hasMoreMessages,
+                        [chatId]: false
+                    }
+                });
+            }
+        } catch (error) {
+            console.error("Failed to load more messages:", error);
+        } finally {
+            set({ isLoadingMore: false });
         }
     },
 

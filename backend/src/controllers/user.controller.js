@@ -96,3 +96,29 @@ export const toggleBlockUser = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 }
+
+export const updatePrivacySettings = async (req, res) => {
+    try {
+        const { privacySettings } = req.body;
+        const userId = req.user._id;
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { privacySettings },
+            { new: true }
+        ).select("-hashPassword");
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Privacy settings updated",
+            user: updatedUser
+        });
+    } catch (error) {
+        console.error("Error in updatePrivacySettings:", error);
+        res.status(500).json({ message: error.message });
+    }
+}

@@ -300,6 +300,7 @@ export const sendMessage = async function (req, res) {
 export const getMessagesByChatId = async function (req, res) {
     try {
         const { chatId } = req.params;
+        const { before, limit = 50 } = req.query;
         const currentUserId = req.user._id;
 
         // Verify user is member of chat
@@ -312,15 +313,23 @@ export const getMessagesByChatId = async function (req, res) {
             return res.status(403).json({ message: "You are not a member of this chat" });
         }
 
-        const messages = await messageModel.find({ chatId })
+        const query = { chatId };
+        if (before) {
+            query.createdAt = { $lt: new Date(before) };
+        }
+
+        const messages = await messageModel.find(query)
             .populate('senderId', 'name profilePic')
             .populate({
                 path: 'replyTo',
                 populate: { path: 'senderId', select: 'name profilePic' }
             })
             .populate('forwardFrom', 'name profilePic')
-            .sort({ createdAt: 1 });
-        return res.json(messages);
+            .sort({ createdAt: -1 })
+            .limit(parseInt(limit));
+
+        // Return messages in chronological order (frontend expects this)
+        return res.json(messages.reverse());
 
     } catch (error) {
         console.error("Error in getMessagesByChatId:", error);

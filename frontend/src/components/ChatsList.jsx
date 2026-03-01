@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useChatStore } from "../store/useChatStore";
 import { userAuthStore } from "../store/userAuthStore";
-import UsersLoadingSkeleton from "../components/usersLoadinSkeleton";
+import ChatListSkeleton from "../components/ChatListSkeleton";
 import NoChatsFound from "../components/noChatsFound";
 import { Check, CheckCheck, Pin, Mute, Camera, Users } from "lucide-react";
 
@@ -14,7 +14,7 @@ function ChatsList({ onSelectChat, onCloseMobile, activeFolder = 'all' }) {
         getAllChats();
     }, [getAllChats]);
 
-    if (isChatLoading) return <UsersLoadingSkeleton />;
+    if (isChatLoading) return <ChatListSkeleton />;
     if (!chats || chats.length === 0) return <NoChatsFound />;
 
 

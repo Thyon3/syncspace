@@ -90,6 +90,10 @@ const messageSchema = new mongoose.Schema({
         ref: 'User',
         required: false,
     },
+    isServiceMessage: {
+        type: Boolean,
+        default: false,
+    },
 }, { timestamps: true });
 
 const User = mongoose.model('Message', messageSchema);

@@ -1,14 +1,15 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useChatStore } from "../store/useChatStore";
 import { userAuthStore } from "../store/userAuthStore";
 import MessageInput from "./MessageInput";
 import ChatHeader from "./ChatHeader";
+import MessageBubble from "./MessageBubble";
 import NoSelectedUserPlaceHolder from "./NoSelectedUserPlaceHolder";
 import NoChatHistoryPlaceHolder from "./NoChatHistoryPlaceHolder";
-import MessagesLoadingSkeleton from "./messagesLoadingSkeleton";
+import MessageSkeleton from "./MessageSkeleton";
 import TypingIndicator from "./TypingIndicator";
 import PinnedMessages from "./PinnedMessages";
-import { Check, CheckCheck } from "lucide-react";
+import { Check, CheckCheck, Loader2 } from "lucide-react";
 
 function ChatContainer() {
     const {
@@ -16,8 +17,11 @@ function ChatContainer() {
         selectedChat,
         messages,
         isMessagesLoading,
+        isLoadingMore,
+        hasMoreMessages,
         getMessages,
         getMessagesByChatId,
+        loadMoreMessages,
         subscribeToMessages,
         unsubscribeFromMessages,
         listenForTyping,
@@ -28,7 +32,11 @@ function ChatContainer() {
 
     const { authUser } = userAuthStore();
     const messageEndRef = useRef(null);
+    const scrollContainerRef = useRef(null);
+    const topSentinelRef = useRef(null);
+    const [prevScrollHeight, setPrevScrollHeight] = useState(0);
 
+    // Initial load and subscriptions
     useEffect(() => {
         if (selectedChat?._id) {
             getMessagesByChatId(selectedChat._id);
@@ -45,8 +53,43 @@ function ChatContainer() {
         };
     }, [selectedUser?._id, selectedChat?._id, getMessages, getMessagesByChatId, subscribeToMessages, unsubscribeFromMessages, listenForTyping, stopListeningForTyping]);
 
+    // Handle Infinite Scroll
     useEffect(() => {
-        if (messageEndRef.current && messages) {
+        if (!selectedChat?._id || !hasMoreMessages[selectedChat._id] || isLoadingMore) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    setPrevScrollHeight(scrollContainerRef.current?.scrollHeight || 0);
+                    loadMoreMessages(selectedChat._id);
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        if (topSentinelRef.current) {
+            observer.observe(topSentinelRef.current);
+        }
+
+        return () => observer.disconnect();
+    }, [selectedChat?._id, hasMoreMessages, isLoadingMore, loadMoreMessages]);
+
+    // Maintain scroll position after loading older messages
+    useEffect(() => {
+        if (!isLoadingMore && prevScrollHeight > 0 && scrollContainerRef.current) {
+            const newHeight = scrollContainerRef.current.scrollHeight;
+            const heightDiff = newHeight - prevScrollHeight;
+            scrollContainerRef.current.scrollTop = heightDiff;
+            setPrevScrollHeight(0);
+        }
+    }, [messages, isLoadingMore, prevScrollHeight]);
+
+    // Auto scroll to bottom on new messages (only if near bottom)
+    useEffect(() => {
+        const isNearBottom = scrollContainerRef.current &&
+            (scrollContainerRef.current.scrollHeight - scrollContainerRef.current.scrollTop - scrollContainerRef.current.clientHeight < 200);
+
+        if (messageEndRef.current && messages && (isNearBottom || messages.length <= 50)) {
             messageEndRef.current.scrollIntoView({ behavior: "smooth" });
         }
 
@@ -65,7 +108,7 @@ function ChatContainer() {
     }, [messages, selectedUser, selectedChat, markMessagesAsRead, authUser._id]);
 
     if (isMessagesLoading) {
-        return <MessagesLoadingSkeleton />;
+        return <MessageSkeleton />;
     }
 
     const formatMessageTime = (time) => {
@@ -135,7 +178,19 @@ function ChatContainer() {
             )}
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto bg-telegram-dark">
+            <div
+                ref={scrollContainerRef}
+                className="flex-1 overflow-y-auto bg-telegram-dark scroll-smooth custom-scrollbar"
+            >
+                {/* Top Sentinel for Infinite Scroll */}
+                <div ref={topSentinelRef} className="h-1" />
+
+                {isLoadingMore && (
+                    <div className="flex justify-center py-4">
+                        <Loader2 className="w-6 h-6 text-telegram-blue animate-spin" />
+                    </div>
+                )}
+
                 {messages && messages.length > 0 ? (
                     <div className="flex flex-col">
                         {Object.entries(groupMessagesByDate(messages)).map(([date, dateMessages]) => (

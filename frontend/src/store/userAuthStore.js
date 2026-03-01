@@ -104,5 +104,47 @@ export const userAuthStore = create((set, get) => ({
                 isCheckingAuth: false
             })
         }
+    },
+    getSessions: async () => {
+        try {
+            const res = await axiosInstance.get("/security/sessions");
+            return res.data;
+        } catch (error) {
+            console.error("Failed to fetch sessions:", error);
+            return [];
+        }
+    },
+    terminateSession: async (sessionId) => {
+        try {
+            const res = await axiosInstance.delete(`/security/sessions/${sessionId}`);
+            toast.success(res.data.message);
+            return true;
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to terminate session");
+            return false;
+        }
+    },
+    terminateOtherSessions: async () => {
+        try {
+            const res = await axiosInstance.delete("/security/sessions/others");
+            toast.success(res.data.message);
+            return true;
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to terminate other sessions");
+            return false;
+        }
+    },
+    updatePrivacySettings: async (settings) => {
+        try {
+            const res = await axiosInstance.put("/user/privacy-settings", { privacySettings: settings });
+            if (res.data.success) {
+                set({ authUser: res.data.user });
+                toast.success(res.data.message);
+                return true;
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to update privacy settings");
+            return false;
+        }
     }
 }));
