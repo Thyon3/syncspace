@@ -529,6 +529,17 @@ export const useChatStore = create((set, get) => ({
             console.error(error);
             toast.error(error.response?.data?.message ?? 'Could not update profile, something went wrong');
         }
-    }
+    },
+
+    forwardMessages: async (messageId, targetChatIds, hideSender = false) => {
+        try {
+            const res = await axiosInstance.post("/messages/forward", { messageId, targetChatIds, hideSender });
+            toast.success("Messages forwarded");
+            return res.data;
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to forward messages");
+            throw error;
+        }
+    },
 
 })); 
