@@ -17,7 +17,10 @@ import {
     saveDraft,
     getDraft,
     pinMessage,
-    unpinMessage
+    unpinMessage,
+    searchChats,
+    toggleArchive,
+    toggleMute
 } from '../controllers/chat.controller.js';
 
 const router = express.Router();
@@ -37,7 +40,9 @@ router.post('/demote-moderator', protectRoute, demoteModerator);
 router.post('/draft', protectRoute, saveDraft);
 router.get('/:chatId/draft', protectRoute, getDraft);
 router.post('/pin', protectRoute, pinMessage);
-router.post('/unpin', protectRoute, unpinMessage);
+router.post("/unpin", protectRoute, unpinMessage);
+router.post("/archive", protectRoute, toggleArchive);
+router.post("/mute", protectRoute, toggleMute);
 router.get('/search', protectRoute, searchUsersAndGroups);
 
 export default router;

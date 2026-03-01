@@ -468,3 +468,48 @@ export const unpinMessage = async (req, res) => {
         return res.status(500).json({ message: error.message });
     }
 };
+
+export const toggleArchive = async (req, res) => {
+    try {
+        const { chatId } = req.body;
+        const userId = req.user._id;
+
+        const chat = await Chat.findById(chatId);
+        if (!chat) return res.status(404).json({ message: "Chat not found" });
+
+        const isArchived = chat.archivedBy.includes(userId);
+        if (isArchived) {
+            chat.archivedBy = chat.archivedBy.filter(id => id.toString() !== userId.toString());
+        } else {
+            chat.archivedBy.push(userId);
+        }
+
+        await chat.save();
+        return res.json({ message: isArchived ? "Chat unarchived" : "Chat archived", chat });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+export const toggleMute = async (req, res) => {
+    try {
+        const { chatId, muteUntil } = req.body;
+        const userId = req.user._id;
+
+        const chat = await Chat.findById(chatId);
+        if (!chat) return res.status(404).json({ message: "Chat not found" });
+
+        const muteIndex = chat.mutedBy.findIndex(m => m.userId.toString() === userId.toString());
+
+        if (muteIndex !== -1) {
+            chat.mutedBy.splice(muteIndex, 1);
+        } else {
+            chat.mutedBy.push({ userId, mutedUntil: muteUntil || null });
+        }
+
+        await chat.save();
+        return res.json({ message: muteIndex !== -1 ? "Chat unmuted" : "Chat muted", chat });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
