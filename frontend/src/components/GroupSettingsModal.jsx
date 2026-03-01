@@ -8,6 +8,7 @@ import {
     Trash2,
     Shield,
     ShieldCheck,
+    ShieldOff,
     Link,
     LogOut,
     Users,
@@ -210,6 +211,23 @@ function GroupSettingsModal({ onClose }) {
 
                                             {isAdmin && !isMemberAdmin && (
                                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    {!isMemberMod ? (
+                                                        <button
+                                                            onClick={() => promoteModerator(selectedChat._id, member._id)}
+                                                            className="p-1.5 text-blue-400 hover:bg-blue-400/10 rounded-lg transition-colors"
+                                                            title="Promote to Moderator"
+                                                        >
+                                                            <Shield className="w-4 h-4" />
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => demoteModerator(selectedChat._id, member._id)}
+                                                            className="p-1.5 text-orange-400 hover:bg-orange-400/10 rounded-lg transition-colors"
+                                                            title="Demote to Member"
+                                                        >
+                                                            <ShieldOff className="w-4 h-4" />
+                                                        </button>
+                                                    )}
                                                     <button
                                                         onClick={() => removeMember(selectedChat._id, member._id)}
                                                         className="p-1.5 text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"

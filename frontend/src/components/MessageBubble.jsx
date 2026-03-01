@@ -112,6 +112,16 @@ function MessageBubble({ message, isOwnMessage }) {
         );
     };
 
+    if (message.isServiceMessage) {
+        return (
+            <div className="flex justify-center my-3 telegram-fade-in px-4">
+                <div className="bg-black/20 backdrop-blur-md px-4 py-1 rounded-full text-[12px] text-slate-300 font-medium text-center shadow-sm border border-white/5">
+                    {message.text}
+                </div>
+            </div>
+        );
+    }
+
     if (message.isDeleted) {
         return (
             <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-1 telegram-fade-in`}>

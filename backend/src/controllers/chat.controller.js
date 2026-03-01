@@ -1,6 +1,7 @@
 import Chat from '../model/chat.model.js';
 import User from '../model/user.model.js';
-import { getIO } from '../config/socket.js';
+import Message from '../model/message.model.js';
+import { getIO, getReceiverSocketId } from '../config/socket.js';
 
 export const getChats = async (req, res) => {
     try {
@@ -49,6 +50,14 @@ export const createGroup = async (req, res) => {
             admin: userId,
         });
 
+        // Create service message
+        await Message.create({
+            chatId: newGroup._id,
+            senderId: userId,
+            text: `${req.user.name} created the group "${name}"`,
+            isServiceMessage: true,
+        });
+
         const populatedGroup = await Chat.findById(newGroup._id)
             .populate('members', '-password')
             .populate('admin', 'name profilePic');
@@ -80,6 +89,14 @@ export const addMember = async (req, res) => {
 
         chat.members.push(userId);
         await chat.save();
+
+        const newUser = await User.findById(userId);
+        await Message.create({
+            chatId,
+            senderId: currentUserId,
+            text: `${currentUserId.toString() === userId.toString() ? 'You' : req.user.name} added ${newUser.name} to the group`,
+            isServiceMessage: true,
+        });
 
         const populatedChat = await Chat.findById(chatId)
             .populate('members', '-password')
@@ -155,6 +172,14 @@ export const removeMember = async (req, res) => {
         chat.members = chat.members.filter(id => id.toString() !== userId);
         await chat.save();
 
+        const removedUser = await User.findById(userId);
+        await Message.create({
+            chatId,
+            senderId: currentUserId,
+            text: `${req.user.name} removed ${removedUser.name} from the group`,
+            isServiceMessage: true,
+        });
+
         const populatedChat = await Chat.findById(chatId)
             .populate('members', '-password')
             .populate('admin', 'name profilePic');
@@ -180,6 +205,13 @@ export const leaveGroup = async (req, res) => {
 
         chat.members = chat.members.filter(id => id.toString() !== userId.toString());
         await chat.save();
+
+        await Message.create({
+            chatId,
+            senderId: userId,
+            text: `${req.user.name} left the group`,
+            isServiceMessage: true,
+        });
 
         return res.json({ message: "Left group successfully" });
     } catch (error) {
@@ -634,6 +666,13 @@ export const joinGroupByInvite = async (req, res) => {
 
         chat.members.push(userId);
         await chat.save();
+
+        await Message.create({
+            chatId: chat.id,
+            senderId: userId,
+            text: `${req.user.name} joined via invite link`,
+            isServiceMessage: true,
+        });
 
         const populatedChat = await Chat.findById(chat.id)
             .populate('members', '-password')
