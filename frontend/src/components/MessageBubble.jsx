@@ -3,6 +3,7 @@ import { useState, useRef } from 'react';
 import { useChatStore } from '../store/useChatStore';
 import { userAuthStore } from '../store/userAuthStore';
 import { formatMessageTime } from '../lib/utils';
+import { parseRichText } from '../lib/textParser';
 import ReactionPicker from './ReactionPicker';
 
 function MessageBubble({ message, isOwnMessage }) {
@@ -47,7 +48,7 @@ function MessageBubble({ message, isOwnMessage }) {
                         className="rounded-lg max-w-full h-auto object-cover cursor-pointer"
                         loading="lazy"
                     />
-                    {message.text && <p className="mt-1 text-message break-words whitespace-pre-wrap">{message.text}</p>}
+                    {message.text && <p className="mt-1 text-message break-words whitespace-pre-wrap">{parseRichText(message.text)}</p>}
                 </div>
             );
         }
@@ -74,7 +75,7 @@ function MessageBubble({ message, isOwnMessage }) {
                             <Download className="w-5 h-5 opacity-80" />
                         </a>
                     </div>
-                    {message.text && <p className="mt-1 text-message break-words whitespace-pre-wrap">{message.text}</p>}
+                    {message.text && <p className="mt-1 text-message break-words whitespace-pre-wrap">{parseRichText(message.text)}</p>}
                 </div>
             );
         }
@@ -109,7 +110,7 @@ function MessageBubble({ message, isOwnMessage }) {
         // 4. Text Only
         return (
             <p className={`text-message break-words whitespace-pre-wrap ${message.isDeleted ? 'italic opacity-60' : ''}`}>
-                {message.text}
+                {parseRichText(message.text)}
             </p>
         );
     };
@@ -142,7 +143,7 @@ function MessageBubble({ message, isOwnMessage }) {
                                 {message.replyTo.senderId?.name || "User"}
                             </p>
                             <p className="text-[12px] text-slate-300 truncate opacity-80">
-                                {message.replyTo.text || (message.replyTo.image ? "Photo" : "Attachment")}
+                                {typeof message.replyTo.text === 'string' ? message.replyTo.text.substring(0, 50) : (message.replyTo.image ? "Photo" : "Attachment")}
                             </p>
                         </div>
                     )}
