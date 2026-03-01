@@ -23,9 +23,9 @@ function ChatApp() {
     setSelectedUser,
     setSelectedChat
   } = useChatStore();
-  const [searchQuery, setSearchQuery] = useState('');
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [activeFolder, setActiveFolder] = useState('all'); // 'all', 'personal', 'groups', 'archive'
 
   // Search Debounce Logic
   useEffect(() => {
@@ -84,7 +84,10 @@ function ChatApp() {
           {/* Chat Folders */}
           <div className="flex-1 overflow-y-auto">
             {/* All Chats Folder */}
-            <div className="telegram-chat-item telegram-chat-item-active">
+            <div
+              onClick={() => setActiveFolder('all')}
+              className={`telegram-chat-item cursor-pointer transition-all ${activeFolder === 'all' ? 'telegram-chat-item-active' : 'hover:bg-slate-700/30'}`}
+            >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-telegram-blue rounded-lg flex items-center justify-center">
                   <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -100,7 +103,10 @@ function ChatApp() {
             </div>
 
             {/* Personal Folder */}
-            <div className="telegram-chat-item">
+            <div
+              onClick={() => setActiveFolder('personal')}
+              className={`telegram-chat-item cursor-pointer transition-all ${activeFolder === 'personal' ? 'telegram-chat-item-active' : 'hover:bg-slate-700/30'}`}
+            >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
                   <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -115,7 +121,10 @@ function ChatApp() {
             </div>
 
             {/* Groups Folder */}
-            <div className="telegram-chat-item">
+            <div
+              onClick={() => setActiveFolder('groups')}
+              className={`telegram-chat-item cursor-pointer transition-all ${activeFolder === 'groups' ? 'telegram-chat-item-active' : 'hover:bg-slate-700/30'}`}
+            >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
                   <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -130,7 +139,10 @@ function ChatApp() {
             </div>
 
             {/* Archive */}
-            <div className="telegram-chat-item">
+            <div
+              onClick={() => setActiveFolder('archive')}
+              className={`telegram-chat-item cursor-pointer transition-all ${activeFolder === 'archive' ? 'telegram-chat-item-active' : 'hover:bg-slate-700/30'}`}
+            >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-slate-600 rounded-lg flex items-center justify-center">
                   <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -268,7 +280,7 @@ function ChatApp() {
                 )}
               </div>
             ) : null}
-            <ChatsList />
+            <ChatsList activeFolder={activeFolder} />
           </div>
         </div>
 

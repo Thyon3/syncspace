@@ -1,18 +1,14 @@
 import React, { useEffect } from "react";
 import { useChatStore } from "../store/useChatStore";
-import UsersLoadingSkeleton from "../components/usersLoadinSkeleton";
-import NoChatsFound from "../components/noChatsFound";
-import { Check, CheckCheck, Pin, Mute, Camera } from "lucide-react";
-
-import { useChatStore } from "../store/useChatStore";
 import { userAuthStore } from "../store/userAuthStore";
 import UsersLoadingSkeleton from "../components/usersLoadinSkeleton";
 import NoChatsFound from "../components/noChatsFound";
 import { Check, CheckCheck, Pin, Mute, Camera, Users } from "lucide-react";
 
-function ChatsList({ onSelectChat, onCloseMobile }) {
-    const { isChatLoading, chats, getAllChats, setSelectedChat, onlineUsers } = useChatStore();
+function ChatsList({ onSelectChat, onCloseMobile, activeFolder = 'all' }) {
+    const { isChatLoading, chats, getAllChats, setSelectedChat, onlineUsers, toggleArchive, toggleMute } = useChatStore();
     const { authUser } = userAuthStore();
+    const [contextMenu, setContextMenu] = React.useState(null); // { x, y, chatId, isArchived, isMuted }
 
     useEffect(() => {
         getAllChats();
@@ -24,9 +20,27 @@ function ChatsList({ onSelectChat, onCloseMobile }) {
 
 
     const handleChatSelect = (chat) => {
+        if (contextMenu) {
+            setContextMenu(null);
+            return;
+        }
         setSelectedChat(chat);
         if (onSelectChat) onSelectChat();
         if (onCloseMobile) onCloseMobile();
+    };
+
+    const handleContextMenu = (e, chat) => {
+        e.preventDefault();
+        const isArchived = chat.archivedBy?.includes(authUser?._id);
+        const isMuted = chat.mutedBy?.some(m => m.userId === authUser?._id);
+
+        setContextMenu({
+            x: e.clientX,
+            y: e.clientY,
+            chatId: chat._id,
+            isArchived,
+            isMuted
+        });
     };
 
     const getChatDisplayInfo = (chat) => {
@@ -77,10 +91,22 @@ function ChatsList({ onSelectChat, onCloseMobile }) {
         }
     };
 
+    const filteredChats = chats?.filter(chat => {
+        const isArchived = chat.archivedBy?.includes(authUser?._id);
+
+        if (activeFolder === 'archive') return isArchived;
+        if (isArchived) return false;
+
+        if (activeFolder === 'personal') return chat.type === 'direct';
+        if (activeFolder === 'groups') return chat.type === 'group';
+
+        return true;
+    });
+
     return (
-        <div className="flex flex-col h-full bg-telegram-dark">
+        <div className="flex flex-col h-full bg-telegram-dark relative" onClick={() => setContextMenu(null)}>
             <div className="flex-1 overflow-y-auto">
-                {chats.map((chat, index) => {
+                {filteredChats?.map((chat, index) => {
                     const displayInfo = getChatDisplayInfo(chat);
                     const lastMessage = chat.lastMessage;
 
@@ -88,7 +114,8 @@ function ChatsList({ onSelectChat, onCloseMobile }) {
                         <div
                             key={chat._id}
                             onClick={() => handleChatSelect(chat)}
-                            className={`telegram-chat-item relative group ${index === 0 ? 'telegram-chat-item-active' : ''
+                            onContextMenu={(e) => handleContextMenu(e, chat)}
+                            className={`telegram-chat-item relative group ${chat._id === useChatStore.getState().selectedChat?._id ? 'telegram-chat-item-active' : ''
                                 }`}
                         >
                             {/* Pinned indicator */}
@@ -120,6 +147,9 @@ function ChatsList({ onSelectChat, onCloseMobile }) {
                                             {displayInfo.isGroup && <Users className="w-3 h-3 text-slate-400" />}
                                         </h4>
                                         <div className="flex items-center gap-1 flex-shrink-0">
+                                            {chat.mutedBy?.some(m => m.userId === authUser?._id) && (
+                                                <Mute className="w-3 h-3 text-slate-500" />
+                                            )}
                                             <span className="text-caption text-slate-400">
                                                 {formatMessageTime(chat.updatedAt)}
                                             </span>
@@ -157,9 +187,41 @@ function ChatsList({ onSelectChat, onCloseMobile }) {
                 })}
             </div>
 
-
+            {/* Context Menu */}
+            {contextMenu && (
+                <div
+                    className="fixed z-[1000] bg-telegram-sidebar border border-slate-700 rounded-xl shadow-2xl py-1 min-w-[160px] animate-in zoom-in-95 duration-100"
+                    style={{ top: contextMenu.y, left: contextMenu.x }}
+                >
+                    <button
+                        onClick={() => { toggleArchive(contextMenu.chatId); setContextMenu(null); }}
+                        className="w-full text-left px-4 py-2 text-sm text-slate-100 hover:bg-slate-700 transition-colors flex items-center gap-3"
+                    >
+                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                        </svg>
+                        {contextMenu.isArchived ? "Unarchive" : "Archive"}
+                    </button>
+                    <button
+                        onClick={() => { toggleMute(contextMenu.chatId); setContextMenu(null); }}
+                        className="w-full text-left px-4 py-2 text-sm text-slate-100 hover:bg-slate-700 transition-colors flex items-center gap-3"
+                    >
+                        <Mute className="w-4 h-4 text-slate-400" />
+                        {contextMenu.isMuted ? "Unmute" : "Mute Notifications"}
+                    </button>
+                    <div className="h-[1px] bg-slate-700 my-1 mx-2"></div>
+                    <button
+                        onClick={() => setContextMenu(null)}
+                        className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-slate-700 transition-colors flex items-center gap-3"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Cancel
+                    </button>
+                </div>
+            )}
         </div>
-
     );
 }
 
