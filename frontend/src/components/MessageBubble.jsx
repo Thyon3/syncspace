@@ -2,9 +2,11 @@ import { FileText, Download, Play, Pause, Reply, Edit, Trash2 } from 'lucide-rea
 import { useState, useRef } from 'react';
 import { useChatStore } from '../store/useChatStore';
 import { userAuthStore } from '../store/userAuthStore';
+import { formatMessageTime } from '../lib/utils';
+import ReactionPicker from './ReactionPicker';
 
 function MessageBubble({ message, isOwnMessage }) {
-    const { selectedChat, setReplyingTo, setEditingMessage, deleteMessage } = useChatStore();
+    const { selectedChat, setReplyingTo, setEditingMessage, deleteMessage, toggleReaction } = useChatStore();
     const { authUser } = userAuthStore();
     const isGroup = selectedChat?.type === 'group';
     const bubbleClass = isOwnMessage
@@ -172,38 +174,69 @@ function MessageBubble({ message, isOwnMessage }) {
                     </div>
                 </div>
 
-                {/* Message Actions Menu (Absolute positioned or sibling) */}
-                <div className={`message-actions absolute ${isOwnMessage ? 'right-full mr-2' : 'left-full ml-2'} top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity`}>
-                    <button
-                        onClick={() => setReplyingTo(message)}
-                        className="p-1.5 bg-telegram-sidebar rounded-full hover:bg-slate-700 text-slate-400 hover:text-telegram-blue transition-all shadow-lg"
-                        title="Reply"
-                    >
-                        <Reply className="w-4 h-4" />
-                    </button>
-                    {isOwnMessage && (
-                        <>
-                            <button
-                                onClick={() => setEditingMessage(message)}
-                                className="p-1.5 bg-telegram-sidebar rounded-full hover:bg-slate-700 text-slate-400 hover:text-emerald-500 transition-all shadow-lg"
-                                title="Edit"
-                            >
-                                <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                                onClick={() => {
-                                    if (window.confirm("Delete this message?")) {
-                                        deleteMessage(message._id);
-                                    }
-                                }}
-                                className="p-1.5 bg-telegram-sidebar rounded-full hover:bg-slate-700 text-slate-400 hover:text-red-500 transition-all shadow-lg"
-                                title="Delete"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </button>
-                        </>
-                    )}
-                </div>
+                {/* Reactions Display */}
+                {message.reactions?.length > 0 && (
+                    <div className={`flex flex-wrap gap-1 mt-1 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+                        {Object.entries(
+                            message.reactions.reduce((acc, curr) => {
+                                acc[curr.emoji] = (acc[curr.emoji] || 0) + 1;
+                                return acc;
+                            }, {})
+                        ).map(([emoji, count]) => {
+                            const hasReacted = message.reactions.some(r => r.userId === authUser?._id && r.emoji === emoji);
+                            return (
+                                <button
+                                    key={emoji}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleReaction(message._id, emoji);
+                                    }}
+                                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[11px] transition-all border
+                                            ${hasReacted
+                                            ? 'bg-telegram-blue/20 border-telegram-blue/40 text-white shadow-sm shadow-telegram-blue/10'
+                                            : 'bg-black/10 border-transparent text-slate-300 hover:bg-black/20 hover:border-slate-600'}`}
+                                >
+                                    <span>{emoji}</span>
+                                    {count > 1 && <span className="font-bold opacity-90">{count}</span>}
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
+            {/* Message Actions Menu */}
+            <div className={`message-actions absolute ${isOwnMessage ? 'right-full mr-2' : 'left-full ml-2'} top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10`}>
+                <ReactionPicker messageId={message._id} />
+                <button
+                    onClick={() => setReplyingTo(message)}
+                    className="p-1.5 bg-telegram-sidebar rounded-full hover:bg-slate-700 text-slate-400 hover:text-telegram-blue transition-all shadow-lg"
+                    title="Reply"
+                >
+                    <Reply className="w-4 h-4" />
+                </button>
+                {isOwnMessage && (
+                    <>
+                        <button
+                            onClick={() => setEditingMessage(message)}
+                            className="p-1.5 bg-telegram-sidebar rounded-full hover:bg-slate-700 text-slate-400 hover:text-emerald-500 transition-all shadow-lg"
+                            title="Edit"
+                        >
+                            <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                            onClick={() => {
+                                if (window.confirm("Delete this message?")) {
+                                    deleteMessage(message._id);
+                                }
+                            }}
+                            className="p-1.5 bg-telegram-sidebar rounded-full hover:bg-slate-700 text-slate-400 hover:text-red-500 transition-all shadow-lg"
+                            title="Delete"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                    </>
+                )}
             </div>
         </div>
     );
