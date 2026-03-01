@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { ENV } from '../util/env.js';
 import User from '../model/user.model.js';
+import Session from '../model/session.model.js';
 
 export const protectRoute = async (req, res, next) => {
     try {
@@ -34,8 +35,18 @@ export const protectRoute = async (req, res, next) => {
             return res.status(401).json({ message: 'User not found — please login again' });
         }
 
+        // Verify session still exists in DB
+        const session = await Session.findOne({ token, userId: user._id });
+        if (!session) {
+            return res.status(401).json({ message: 'Session terminated — please login again' });
+        }
+
+        // Update lastActive
+        session.lastActive = new Date();
+        await session.save();
 
         req.user = user;
+        req.session = session; // Attach session to request
 
         next();
     } catch (error) {

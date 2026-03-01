@@ -47,7 +47,7 @@ export const signUp = async function (req, res) {
         });
 
         if (user) {
-            generateToken(user._id, res);
+            generateToken(user._id, res, req);
 
             await user.save();
         } else {
@@ -98,7 +98,7 @@ export const login = async (req, res) => {
         }
 
         // generate JWT cookie
-        const token = generateToken(user._id, res);
+        const token = await generateToken(user._id, res, req);
 
         return res.status(200).json({
             token,

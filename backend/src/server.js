@@ -40,6 +40,7 @@ import reactionRouter from './routers/reaction.route.js';
 import pinRouter from './routers/pin.route.js';
 import blockRouter from './routers/block.route.js';
 import privacyRouter from './routers/privacy.route.js';
+import securityRouter from './routers/security.route.js';
 
 // Port
 const port = ENV.PORT || 3000;
@@ -54,6 +55,7 @@ app.use("/api/reactions", reactionRouter);
 app.use("/api/pins", pinRouter);
 app.use("/api/users", blockRouter);
 app.use("/api/privacy", privacyRouter);
+app.use("/api/security", securityRouter);
 
 // Example route
 app.get("/fuck", (req, res) => {
