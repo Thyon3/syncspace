@@ -6,6 +6,7 @@ import { userAuthStore } from './store/userAuthStore';
 import PageLoader from './components/page_loader';
 import { Toaster } from 'react-hot-toast';
 import ChatApp from './components/ChatApp';
+import JoinGroup from './components/JoinGroup';
 
 function App() {
   const { authUser, isCheckingAuth } = userAuthStore();
@@ -22,7 +23,13 @@ function App() {
     );
   }
 
-  return <ChatApp />;
+  return (
+    <Routes>
+      <Route path="/" element={<ChatApp />} />
+      <Route path="/join/:inviteCode" element={<JoinGroup />} />
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
+  );
 }
 
 export default App;

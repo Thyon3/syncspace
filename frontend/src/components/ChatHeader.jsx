@@ -2,9 +2,12 @@ import React from "react";
 import { X as XIcon, ArrowLeft, Phone, Video, Search, MoreVertical } from "lucide-react";
 import { useChatStore } from "../store/useChatStore";
 import { getRelativeTime } from "../lib/utils";
+import GroupSettingsModal from "./GroupSettingsModal";
+import { useState } from "react";
 
 function ChatHeader() {
     const { selectedUser, setSelectedUser, selectedChat, setSelectedChat, onlineUsers } = useChatStore();
+    const [showGroupSettings, setShowGroupSettings] = useState(false);
 
     if (!selectedUser && !selectedChat) {
         return (
@@ -67,8 +70,11 @@ function ChatHeader() {
                 </div>
 
                 {/* Info */}
-                <div className="min-w-0 flex-1">
-                    <h3 className="text-title text-slate-100 truncate">
+                <div
+                    className={`min-w-0 flex-1 ${isGroup ? 'cursor-pointer' : ''}`}
+                    onClick={() => isGroup && setShowGroupSettings(true)}
+                >
+                    <h3 className="text-title text-slate-100 truncate hover:text-telegram-blue transition-colors">
                         {displayInfo.name}
                     </h3>
                     <p className="text-caption text-slate-400 truncate">
@@ -103,6 +109,10 @@ function ChatHeader() {
                     <MoreVertical className="w-5 h-5" />
                 </button>
             </div>
+
+            {showGroupSettings && (
+                <GroupSettingsModal onClose={() => setShowGroupSettings(false)} />
+            )}
         </div>
     );
 }

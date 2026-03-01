@@ -154,17 +154,29 @@ export const useChatStore = create((set, get) => ({
             }
         });
 
-        // Listen for online users
-        socket.on('getOnlineUsers', (userIds) => {
-            set({ onlineUsers: userIds });
-        });
-
         // Listen for draft updates (cross-device sync)
         socket.on('draftUpdated', ({ chatId, text }) => {
             const { drafts } = get();
             set({
                 drafts: { ...drafts, [chatId]: text }
             });
+        });
+
+        socket.on('groupUpdated', (updatedChat) => {
+            const { chats, selectedChat } = get();
+            set({
+                chats: chats.map(c => c._id === updatedChat._id ? updatedChat : c),
+                selectedChat: selectedChat?._id === updatedChat._id ? updatedChat : selectedChat
+            });
+        });
+
+        socket.on('groupDeleted', (chatId) => {
+            const { chats, selectedChat } = get();
+            set({
+                chats: chats.filter(c => c._id !== chatId),
+                selectedChat: selectedChat?._id === chatId ? null : selectedChat
+            });
+            toast.info("Group has been deleted");
         });
     },
 
@@ -605,6 +617,60 @@ export const useChatStore = create((set, get) => ({
             await axiosInstance.post("/chats/draft", { chatId, text });
         } catch (error) {
             console.error("Failed to save draft:", error);
+        }
+    },
+
+    deleteGroup: async (chatId) => {
+        try {
+            await axiosInstance.delete(`/chats/${chatId}`);
+            const { chats, selectedChat } = get();
+            set({
+                chats: chats.filter(c => c._id !== chatId),
+                selectedChat: selectedChat?._id === chatId ? null : selectedChat
+            });
+            toast.success("Group deleted");
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to delete group");
+        }
+    },
+
+    updateGroup: async (data) => {
+        try {
+            const res = await axiosInstance.put("/chats/update", data);
+            const { chats, selectedChat } = get();
+            const updatedChat = res.data;
+            set({
+                chats: chats.map(c => c._id === updatedChat._id ? updatedChat : c),
+                selectedChat: selectedChat?._id === updatedChat._id ? updatedChat : selectedChat
+            });
+            toast.success("Group updated");
+            return updatedChat;
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to update group");
+        }
+    },
+
+    generateInviteCode: async (chatId) => {
+        try {
+            const res = await axiosInstance.post("/chats/invite-code", { chatId });
+            return res.data.inviteCode;
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to generate invite link");
+        }
+    },
+
+    joinGroupByInvite: async (inviteCode) => {
+        try {
+            const res = await axiosInstance.post(`/chats/join/${inviteCode}`);
+            const { chats } = get();
+            set({
+                chats: [res.data, ...chats],
+                selectedChat: res.data
+            });
+            toast.success("Joined group successfully");
+            return res.data;
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to join group");
         }
     },
 
