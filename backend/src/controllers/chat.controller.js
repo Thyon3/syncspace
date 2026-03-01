@@ -521,3 +521,128 @@ export const toggleMute = async (req, res) => {
         return res.status(500).json({ message: error.message });
     }
 };
+
+export const deleteGroup = async (req, res) => {
+    try {
+        const { chatId } = req.params;
+        const userId = req.user._id;
+
+        const chat = await Chat.findById(chatId);
+        if (!chat) return res.status(404).json({ message: "Chat not found" });
+
+        if (chat.type !== 'group') return res.status(400).json({ message: "Not a group chat" });
+
+        if (chat.admin.toString() !== userId.toString()) {
+            return res.status(403).json({ message: "Only admin can delete the group" });
+        }
+
+        await Chat.findByIdAndDelete(chatId);
+
+        // Notify members via socket
+        const io = getIO();
+        chat.members.forEach(memberId => {
+            const socketId = getReceiverSocketId(memberId.toString());
+            if (socketId) {
+                io.to(socketId).emit('groupDeleted', chatId);
+            }
+        });
+
+        return res.json({ message: "Group deleted successfully" });
+    } catch (error) {
+        console.error("Error in deleteGroup:", error);
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+export const updateGroup = async (req, res) => {
+    try {
+        const { chatId, groupName, groupDescription, groupImage, isPublic } = req.body;
+        const userId = req.user._id;
+
+        const chat = await Chat.findById(chatId);
+        if (!chat) return res.status(404).json({ message: "Chat not found" });
+
+        const isAdmin = chat.admin && chat.admin.toString() === userId.toString();
+        const isModerator = chat.moderators && chat.moderators.some(m => m.toString() === userId.toString());
+
+        if (!isAdmin && !isModerator) {
+            return res.status(403).json({ message: "Only admin and moderators can update group settings" });
+        }
+
+        if (groupName) chat.groupName = groupName;
+        if (groupDescription !== undefined) chat.groupDescription = groupDescription;
+        if (groupImage) chat.groupImage = groupImage;
+        if (isPublic !== undefined) chat.isPublic = isPublic;
+
+        await chat.save();
+
+        const populatedChat = await Chat.findById(chatId)
+            .populate('members', '-password')
+            .populate('admin', 'name profilePic');
+
+        // Notify members
+        const io = getIO();
+        chat.members.forEach(memberId => {
+            const socketId = getReceiverSocketId(memberId.toString());
+            if (socketId) {
+                io.to(socketId).emit('groupUpdated', populatedChat);
+            }
+        });
+
+        return res.json(populatedChat);
+    } catch (error) {
+        console.error("Error in updateGroup:", error);
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+export const generateInviteCode = async (req, res) => {
+    try {
+        const { chatId } = req.body;
+        const userId = req.user._id;
+
+        const chat = await Chat.findById(chatId);
+        if (!chat) return res.status(404).json({ message: "Chat not found" });
+
+        if (chat.admin.toString() !== userId.toString()) {
+            return res.status(403).json({ message: "Only admin can generate invite link" });
+        }
+
+        // Simple random code
+        const code = Math.random().toString(36).substring(2, 10);
+        chat.inviteCode = code;
+        await chat.save();
+
+        return res.json({ inviteCode: code });
+    } catch (error) {
+        console.error("Error in generateInviteCode:", error);
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+export const joinGroupByInvite = async (req, res) => {
+    try {
+        const { inviteCode } = req.params;
+        const userId = req.user._id;
+
+        const chat = await Chat.findOne({ inviteCode });
+        if (!chat) return res.status(404).json({ message: "Invalid or expired invite link" });
+
+        if (chat.members.includes(userId)) {
+            return res.status(400).json({ message: "You are already a member of this group" });
+        }
+
+        chat.members.push(userId);
+        await chat.save();
+
+        const populatedChat = await Chat.findById(chat.id)
+            .populate('members', '-password')
+            .populate('admin', 'name profilePic')
+            .populate('lastMessage');
+
+        return res.json(populatedChat);
+    } catch (error) {
+        console.error("Error in joinGroupByInvite:", error);
+        return res.status(500).json({ message: error.message });
+    }
+};

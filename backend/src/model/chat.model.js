@@ -65,6 +65,15 @@ const chatSchema = new mongoose.Schema({
             default: Date.now,
         }
     }],
+    isPublic: {
+        type: Boolean,
+        default: false,
+    },
+    inviteCode: {
+        type: String,
+        unique: true,
+        sparse: true, // Only if group is public or has a code
+    },
 }, { timestamps: true });
 
 const Chat = mongoose.model('Chat', chatSchema);

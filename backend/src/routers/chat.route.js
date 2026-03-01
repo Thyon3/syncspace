@@ -20,7 +20,11 @@ import {
     unpinMessage,
     searchChats,
     toggleArchive,
-    toggleMute
+    toggleMute,
+    deleteGroup,
+    updateGroup,
+    generateInviteCode,
+    joinGroupByInvite
 } from '../controllers/chat.controller.js';
 
 const router = express.Router();
@@ -44,5 +48,9 @@ router.post("/unpin", protectRoute, unpinMessage);
 router.post("/archive", protectRoute, toggleArchive);
 router.post("/mute", protectRoute, toggleMute);
 router.get('/search', protectRoute, searchUsersAndGroups);
+router.delete('/:chatId', protectRoute, deleteGroup);
+router.put('/update', protectRoute, updateGroup);
+router.post('/invite-code', protectRoute, generateInviteCode);
+router.post('/join/:inviteCode', protectRoute, joinGroupByInvite);
 
 export default router;
