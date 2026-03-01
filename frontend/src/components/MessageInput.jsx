@@ -38,9 +38,12 @@ function MessageInput() {
         editingMessage,
         setReplyingTo,
         setEditingMessage,
-        editMessage
+        editMessage,
+        drafts,
+        saveDraft
     } = useChatStore();
     const typingTimeoutRef = useRef(null);
+    const draftTimeoutRef = useRef(null);
 
     useEffect(() => {
         // Auto-resize textarea
@@ -58,29 +61,43 @@ function MessageInput() {
                 textareaRef.current.focus();
             }
         } else {
-            setText("");
+            // Load draft for selected chat
+            const chatId = selectedChat?._id || selectedUser?._id; // Use userId as fallback for 1:1
+            if (chatId && drafts[chatId]) {
+                setText(drafts[chatId]);
+            } else {
+                setText("");
+            }
         }
-    }, [editingMessage]);
+    }, [editingMessage, selectedChat, selectedUser, drafts]);
 
     useEffect(() => {
         return () => {
             if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            if (draftTimeoutRef.current) clearTimeout(draftTimeoutRef.current);
         };
     }, []);
 
     const handleInputChange = (e) => {
-        setText(e.target.value);
+        const newText = e.target.value;
+        setText(newText);
 
-        if (selectedUser) {
+        if (selectedUser || selectedChat) {
+            // 1. Typing indicator
             emitTyping(true);
-
-            // Clear previous timeout
             if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-
-            // Set new timeout to stop typing after 3 seconds
             typingTimeoutRef.current = setTimeout(() => {
                 emitTyping(false);
             }, 3000);
+
+            // 2. Draft saving (Debounced)
+            if (draftTimeoutRef.current) clearTimeout(draftTimeoutRef.current);
+            draftTimeoutRef.current = setTimeout(() => {
+                const chatId = selectedChat?._id || selectedUser?._id;
+                if (chatId) {
+                    saveDraft(chatId, newText);
+                }
+            }, 1500); // Save draft after 1.5s of inactivity
         }
     };
 
@@ -103,6 +120,12 @@ function MessageInput() {
                     receiverId: selectedUser?._id,
                     isSilent: options.isSilent || false,
                 });
+            }
+
+            // Clear draft when sent
+            const chatId = selectedChat?._id || selectedUser?._id;
+            if (chatId) {
+                saveDraft(chatId, ""); // Clear backend draft
             }
 
             setText("");

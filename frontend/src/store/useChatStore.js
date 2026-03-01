@@ -18,6 +18,7 @@ export const useChatStore = create((set, get) => ({
     isContactLoading: false,
     isSearchLoading: false,
     searchResults: { messages: [], users: [], groups: [] },
+    drafts: {}, // { chatId: text }
     isSoundEnabled: localStorage.getItem("isSoundEnabled") === "true",
     selectedUser: null,
     selectedChat: null,
@@ -156,6 +157,14 @@ export const useChatStore = create((set, get) => ({
         // Listen for online users
         socket.on('getOnlineUsers', (userIds) => {
             set({ onlineUsers: userIds });
+        });
+
+        // Listen for draft updates (cross-device sync)
+        socket.on('draftUpdated', ({ chatId, text }) => {
+            const { drafts } = get();
+            set({
+                drafts: { ...drafts, [chatId]: text }
+            });
         });
     },
 
@@ -502,8 +511,21 @@ export const useChatStore = create((set, get) => ({
         try {
             // Fetch Chats (Groups + Directs) from new endpoint
             const res = await axiosInstance.get('/chats'); // endpoint from chat.route.js
+            const chats = res.data;
+            const authUser = userAuthStore.getState().authUser;
+
+            // Populate drafts for the current user
+            const drafts = {};
+            chats.forEach(chat => {
+                const userDraft = chat.draftMessages?.find(d => d.userId === authUser?._id || d.userId?._id === authUser?._id);
+                if (userDraft?.text) {
+                    drafts[chat._id] = userDraft.text;
+                }
+            });
+
             set({
-                chats: res.data
+                chats,
+                drafts
             })
         } catch (error) {
             toast.error(error.response?.data?.message ?? 'something went wrong');
@@ -571,6 +593,18 @@ export const useChatStore = create((set, get) => ({
             toast.success(res.data.message);
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to mute/unmute chat");
+        }
+    },
+
+    saveDraft: async (chatId, text) => {
+        try {
+            // Optimistic update
+            const { drafts } = get();
+            set({ drafts: { ...drafts, [chatId]: text } });
+
+            await axiosInstance.post("/chats/draft", { chatId, text });
+        } catch (error) {
+            console.error("Failed to save draft:", error);
         }
     },
 

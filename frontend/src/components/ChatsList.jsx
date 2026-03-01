@@ -175,7 +175,10 @@ function ChatsList({ onSelectChat, onCloseMobile, activeFolder = 'all' }) {
                                                     <Camera className="w-3 h-3 text-slate-400 flex-shrink-0" />
                                                 )}
                                                 <p className="text-message text-slate-300 truncate">
-                                                    {lastMessage?.text || (lastMessage?.image ? "Photo" : (lastMessage?.fileUrl ? "File" : "Start a conversation"))}
+                                                    {useChatStore.getState().drafts[chat._id] ? (
+                                                        <span className="text-red-500 font-medium">Draft: </span>
+                                                    ) : null}
+                                                    {useChatStore.getState().drafts[chat._id] || lastMessage?.text || (lastMessage?.image ? "Photo" : (lastMessage?.fileUrl ? "File" : "Start a conversation"))}
                                                 </p>
                                             </div>
                                         </div>

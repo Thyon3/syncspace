@@ -361,6 +361,14 @@ export const saveDraft = async (req, res) => {
         }
 
         await chat.save();
+
+        // Socket emit to the user's other sessions/sockets for cross-device sync
+        const io = getIO();
+        const receiverSocketId = getReceiverSocketId(userId.toString());
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('draftUpdated', { chatId, text });
+        }
+
         return res.json({ message: "Draft saved", chat });
     } catch (error) {
         console.error("Error in saveDraft:", error);
