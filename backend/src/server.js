@@ -41,6 +41,11 @@ import pinRouter from './routers/pin.route.js';
 import blockRouter from './routers/block.route.js';
 import privacyRouter from './routers/privacy.route.js';
 import securityRouter from './routers/security.route.js';
+import notificationRouter from './routers/notification.route.js';
+import callRouter from './routers/call.route.js';
+import mediaRouter from './routers/media.route.js';
+import userStatusRouter from './routers/userStatus.route.js';
+import scheduledMessageRouter from './routers/scheduledMessage.route.js';
 
 // Port
 const port = ENV.PORT || 3000;
@@ -56,6 +61,11 @@ app.use("/api/pins", pinRouter);
 app.use("/api/users", blockRouter);
 app.use("/api/privacy", privacyRouter);
 app.use("/api/security", securityRouter);
+app.use("/api/notifications", notificationRouter);
+app.use("/api/calls", callRouter);
+app.use("/api/media", mediaRouter);
+app.use("/api/status", userStatusRouter);
+app.use("/api/scheduled", scheduledMessageRouter);
 
 // Example route
 app.get("/fuck", (req, res) => {
